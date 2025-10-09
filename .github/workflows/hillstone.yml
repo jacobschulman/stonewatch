@@ -20,7 +20,7 @@ jobs:
           MERCHANT_ID: "278278"
           PARTY_SIZES: "2,4"          # scan both 2 and 4
           ENABLE_DINNER: "true"       # "true" / "false"
-          ENABLE_LUNCH: "false"       # set "true" if you want lunch too
+          ENABLE_LUNCH: "true"       # set "true" if you want lunch too
           DAYS_AHEAD: "3"             # last-minute focus (today + next 2)
           STEP_MIN: "15"              # 15-minute grid
           LINK_BASE: ${{ secrets.LINK_BASE }}   # booking page URL
@@ -35,7 +35,7 @@ jobs:
           GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
 
           # --- DEBUGGING TEMP ---
-          DEBUG: "true"
-          TEST_ALERT: "true"
-          TEST_FIXED_KEY: "Thu Oct 09|7:30 PM|2|Dinner"
+          DEBUG: "false"
+          TEST_ALERT: "false"
+          #TEST_FIXED_KEY: "Thu Oct 09|7:30 PM|2|Dinner"
         run: python watcher.py

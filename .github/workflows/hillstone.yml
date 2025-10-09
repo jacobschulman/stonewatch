@@ -40,3 +40,14 @@ jobs:
           TEST_ALERT: "false"
           #TEST_FIXED_KEY: "Thu Oct 09|7:30 PM|2|Dinner"
         run: python watcher.py
+
+      - name: Commit logs (if any)
+        run: |
+          if [ -f availability_log.csv ]; then
+            git config user.email "actions@github.com"
+            git config user.name "GitHub Actions"
+            git add availability_log.csv
+            git commit -m "update logs [skip ci]" || echo "no changes"
+            git push || echo "push skipped"
+          fi
+

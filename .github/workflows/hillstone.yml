@@ -34,4 +34,11 @@ jobs:
           # --- GIST SETUP FOR DEDUPING --- 
           GIST_ID:     ${{ secrets.GIST_ID }}
           GIST_TOKEN:  ${{ secrets.GIST_TOKEN }}
+
+          # --- DEBUGGING TEMP ---
+                  env:
+          # ...existing env...
+          DEBUG: "true"
+          TEST_ALERT: "true"
+          TEST_FIXED_KEY: "Thu Oct 09|7:30 PM|2|Dinner"
         run: python watcher.py

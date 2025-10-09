@@ -16,6 +16,10 @@ LINK_BASE     = os.getenv("LINK_BASE", "https://example.com")
 PUSHOVER_USER = os.getenv("PUSHOVER_USER")
 PUSHOVER_TOKEN= os.getenv("PUSHOVER_TOKEN")
 SLACK_WEBHOOK = os.getenv("SLACK_WEBHOOK")
+PUSHOVER_TITLE  = os.getenv("PUSHOVER_TITLE", "🚨 New Table At Stone 🚨")  # default fun title
+PUSHOVER_SOUND  = os.getenv("PUSHOVER_SOUND")  # e.g., "magic", "siren", "bike"
+PUSHOVER_PRIORITY = os.getenv("PUSHOVER_PRIORITY", "0")  # -2..2, "0" normal
+PUSHOVER_URL_TITLE_DEFAULT = os.getenv("PUSHOVER_URL_TITLE", "Book now")
 
 # Gist state (cross-run dedupe)
 GIST_ID       = os.getenv("GIST_ID")      # required for cross-run dedupe
@@ -126,30 +130,62 @@ def save_seen(seen: dict):
     except Exception:
         pass
 
-# ---------- Notifiers ----------
-def notify(lines: list[str]):
-    if not lines: return
-    text = "\n".join(lines)
-    if PUSHOVER_USER and PUSHOVER_TOKEN:
-        try:
-            requests.post("https://api.pushover.net/1/messages.json",
-                data={"token": PUSHOVER_TOKEN, "user": PUSHOVER_USER,
-                      "title":"Hillstone Park Ave","message":text}, timeout=10)
-        except Exception:
-            pass
-    if SLACK_WEBHOOK:
-        try:
-            requests.post(SLACK_WEBHOOK, json={"text": text}, timeout=10)
-        except Exception:
-            pass
-    print(text)
+# ----------- Notifiers -----------
+def notify(items: list[dict]):
+    """
+    items: list of dicts with keys:
+      - title (str)
+      - message (str)
+      - url (str, optional)
+      - url_title (str, optional)
+    """
+    if not items:
+        return
+
+    for it in items:
+        text  = it["message"]
+        title = it.get("title", PUSHOVER_TITLE)
+        url   = it.get("url")
+        url_title = it.get("url_title", PUSHOVER_URL_TITLE_DEFAULT)
+
+        # Pushover
+        if PUSHOVER_USER and PUSHOVER_TOKEN:
+            data = {
+                "token": PUSHOVER_TOKEN,
+                "user": PUSHOVER_USER,
+                "title": title,
+                "message": text,
+                "priority": PUSHOVER_PRIORITY,
+            }
+            if PUSHOVER_SOUND:
+                data["sound"] = PUSHOVER_SOUND
+            if url:
+                data["url"] = url
+                data["url_title"] = url_title
+            try:
+                requests.post("https://api.pushover.net/1/messages.json", data=data, timeout=10)
+            except Exception:
+                pass
+
+        # Slack webhook (optional)
+        if SLACK_WEBHOOK:
+            try:
+                slack_text = f"*{title}*\n{text}"
+                if url:
+                    slack_text += f"\n<{url}|{url_title}>"
+                requests.post(SLACK_WEBHOOK, json={"text": slack_text}, timeout=10)
+            except Exception:
+                pass
+
+        # Always echo to logs
+        print(f"{title} — {text}")
 
 def run_once():
     svcs = enabled_services()
     today = datetime.now(tz=NYC).date()
     seen = load_seen()
     now_ts = int(time.time())
-    lines = []
+    items = []
     found_this_run = set()
 
     for i in range(DAYS_AHEAD):
@@ -181,10 +217,16 @@ def run_once():
 
                             candidate = f"{LINK_BASE}?reservation_type_id={type_id}&party_size={party}&search_ts={ts}"
                             link = url or candidate
-                            lines.append(
-                                f"Woohoo! New table for {party} on {date_str} @ {time_str} ({svc_name}). "
-                                f"Act fast! {link}"
-                            )
+
+                            fun_title = f"🍸 Hillstone Alert — Table for {party} ({svc_name})"
+                            msg = f"{date_str} @ {time_str}. Act fast!"
+                            items.append({
+                                "title": fun_title,
+                                "message": msg,
+                                "url": link,
+                                "url_title": "Grab it →"
+                            })
+                            
                 time.sleep(0.05)
 
     # Save updated state & notify

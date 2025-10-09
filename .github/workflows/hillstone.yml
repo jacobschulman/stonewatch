@@ -26,13 +26,13 @@ jobs:
           LINK_BASE: ${{ secrets.LINK_BASE }}   # booking page URL
 
           # --- Notifications (pick one or both) ---
-          PUSHOVER_USER:  ${{ secrets.PUSHOVER_USER }}
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
           PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
-          SLACK_WEBHOOK:  ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 
           # --- GIST SETUP FOR DEDUPING --- 
-          GIST_ID:     ${{ secrets.GIST_ID }}
-          GIST_TOKEN:  ${{ secrets.GIST_TOKEN }}
+          GIST_ID: ${{ secrets.GIST_ID }}
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
 
           # --- DEBUGGING TEMP ---
           DEBUG: "true"

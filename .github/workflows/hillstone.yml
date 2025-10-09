@@ -1,0 +1,32 @@
+name: hillstone-watch
+
+on:
+  schedule:
+    - cron: "*/11 * * * *"      # runs about every 11 minutes
+  workflow_dispatch:            # lets you run it manually from the Actions tab
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: Run watcher
+        env:
+          # --- Config you can tweak here ---
+          MERCHANT_ID: "278278"
+          PARTY_SIZES: "2,4"          # scan both 2 and 4
+          ENABLE_DINNER: "true"       # "true" / "false"
+          ENABLE_LUNCH: "false"       # set "true" if you want lunch too
+          DAYS_AHEAD: "3"             # last-minute focus (today + next 2)
+          STEP_MIN: "15"              # 15-minute grid
+          LINK_BASE: ${{ secrets.LINK_BASE }}   # booking page URL
+          # --- Notifications (pick one or both) ---
+          PUSHOVER_USER:  ${{ secrets.PUSHOVER_USER }}
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
+          SLACK_WEBHOOK:  ${{ secrets.SLACK_WEBHOOK }}
+        run: python watcher.py

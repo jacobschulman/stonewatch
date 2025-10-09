@@ -207,7 +207,6 @@ def run_once():
                             url  = slot.get("booking_url") or slot.get("reserve_url") or LINK_BASE
 
                             date_str, time_str = format_when(iso, label, dt)
-                            day_str = datetime.strptime(date_str, "%b %d, %Y").strftime("%a")
                             key = f"{date_str}|{time_str}|{party}|{svc_name}"
 
                             # suppress duplicates across runs
@@ -220,7 +219,7 @@ def run_once():
                             link = url or candidate
 
                             fun_title = f"🍸🚨 Hillstone Resy 🚨🍸"
-                            msg = f"{day_str} {date_str} @ {time_str}, for {party}. Act fast!"
+                            msg = f"{date_str} @ {time_str}, for {party}. Act fast!"
                             items.append({
                                 "title": fun_title,
                                 "message": msg,

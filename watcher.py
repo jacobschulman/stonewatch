@@ -231,8 +231,8 @@ def run_once():
 
     # Save updated state & notify
     save_seen(seen)
-    if lines:
-        notify(lines)
+    if items:
+        notify(items)
     else:
         print("No NEW openings this run.")
 

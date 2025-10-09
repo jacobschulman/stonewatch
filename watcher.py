@@ -1,6 +1,6 @@
 # watcher.py
-import os, time, json, requests
-from datetime import datetime, timedelta
+import os, time, json, requests, csv
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 # ---- Config via ENV ----
@@ -181,6 +181,55 @@ def notify(items: list[dict]):
         # Always echo to logs
         print(f"{title} — {text}")
 
+# ---------- Logging setup ----------
+LOG_FILE = "availability_log.csv"
+CSV_HEADER = [
+    "seen_at_iso", "slot_at_iso",
+    "lead_minutes", "lead_hours",
+    "service", "party_size",
+    "weekday_slot", "weekday_seen", "hour_slot",
+    "merchant_id", "source"
+]
+
+def ensure_csv_header(path: str):
+    if not os.path.exists(path):
+        with open(path, "w", newline="") as f:
+            csv.writer(f).writerow(CSV_HEADER)
+
+def log_slot_event(slot_dt_nyc, seen_dt_utc, service, party_size, merchant_id="278278", source="wisely"):
+    ensure_csv_header(LOG_FILE)
+    lead = (slot_dt_nyc.astimezone(timezone.utc) - seen_dt_utc).total_seconds() / 60.0
+    lead_hours = round(lead / 60.0, 1)
+    row = [
+        seen_dt_utc.isoformat(timespec="seconds"),
+        slot_dt_nyc.isoformat(timespec="seconds"),
+        int(round(lead)), lead_hours,
+        service, int(party_size),
+        slot_dt_nyc.strftime("%a"),
+        seen_dt_utc.astimezone(NYC).strftime("%a"),
+        int(slot_dt_nyc.strftime("%H")),
+        merchant_id, source
+    ]
+    with open(LOG_FILE, "a", newline="") as f:
+        csv.writer(f).writerow(row)
+
+def compute_slot_dt_nyc(iso, label, probed_dt_nyc):
+    # Prefer ISO if present; else combine label time with the probed date
+    if iso:
+        try:
+            return datetime.fromisoformat(iso.replace("Z","+00:00")).astimezone(NYC)
+        except Exception:
+            pass
+    if label:
+        try:
+            t_only = datetime.strptime(label.strip().upper(), "%I:%M %p")
+            return probed_dt_nyc.replace(hour=t_only.hour, minute=t_only.minute, second=0, microsecond=0)
+        except Exception:
+            return probed_dt_nyc
+    return probed_dt_nyc
+
+# RUN ONCE NOTIFICATION SETTINGS
+
 def run_once():
     svcs = enabled_services()
     today = datetime.now(tz=NYC).date()
@@ -208,7 +257,7 @@ def run_once():
                             url  = slot.get("booking_url") or slot.get("reserve_url") or LINK_BASE
 
                             date_str, time_str = format_when(iso, label, dt)
-                            key = f"{date_str}|{time_str}|{party}|{svc_name}"
+                            key = f"{MERCHANT_ID}|{date_str}|{time_str}|{party}|{svc_name}"
                             
                             # suppress duplicates across runs but allow re-notify after cooldown
                             last_notified = int(seen.get(key, 0))  # previously alerted timestamp
@@ -233,6 +282,13 @@ def run_once():
 
                             fun_title = f"🍸🚨 Hillstone Resy 🚨🍸"
                             msg = f"{date_str} @ {time_str}, for {party}. Act fast!"
+                            
+                            # --- Log it before adding to items ---
+                            slot_dt_nyc = compute_slot_dt_nyc(iso, label, dt)
+                            seen_dt_utc = datetime.now(timezone.utc)
+                            log_slot_event(slot_dt_nyc, seen_dt_utc, svc_name, party, MERCHANT_ID, "wisely")
+
+                            # --- Then append the notification item ---
                             items.append({
                                 "title": fun_title,
                                 "message": msg,

@@ -1,21 +1,27 @@
 # watcher.py
-import os, time, requests
+import os, time, json, requests
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-# ---- Config via ENV (set in GitHub Secrets) ----
+# ---- Config via ENV ----
 MERCHANT_ID   = os.getenv("MERCHANT_ID", "278278")
 PARTY_SIZES   = [int(x) for x in os.getenv("PARTY_SIZES", "2,4").split(",")]
 ENABLE_DINNER = os.getenv("ENABLE_DINNER", "true").lower() == "true"
 ENABLE_LUNCH  = os.getenv("ENABLE_LUNCH", "false").lower() == "true"
-DAYS_AHEAD    = int(os.getenv("DAYS_AHEAD", "3"))      # last-minute focus
-STEP_MIN      = int(os.getenv("STEP_MIN", "15"))       # 15-min grid
+DAYS_AHEAD    = int(os.getenv("DAYS_AHEAD", "3"))
+STEP_MIN      = int(os.getenv("STEP_MIN", "15"))
 LINK_BASE     = os.getenv("LINK_BASE", "https://example.com")
 
-# Notifications (choose one or both)
-PUSHOVER_USER = os.getenv("PUSHOVER_USER")  # optional
-PUSHOVER_TOKEN= os.getenv("PUSHOVER_TOKEN") # optional
-SLACK_WEBHOOK = os.getenv("SLACK_WEBHOOK")  # optional
+# Notifications
+PUSHOVER_USER = os.getenv("PUSHOVER_USER")
+PUSHOVER_TOKEN= os.getenv("PUSHOVER_TOKEN")
+SLACK_WEBHOOK = os.getenv("SLACK_WEBHOOK")
+
+# Gist state (cross-run dedupe)
+GIST_ID       = os.getenv("GIST_ID")      # required for cross-run dedupe
+GIST_TOKEN    = os.getenv("GIST_TOKEN")   # required for cross-run dedupe
+STATE_FILENAME= "seen.json"
+STATE_TTL_DAYS= 5  # keep keys for 5 days, then prune
 
 # ---- Constants ----
 NYC = ZoneInfo("America/New_York")
@@ -35,7 +41,7 @@ def enabled_services():
 def to_epoch_ms(dt_local: datetime) -> int:
     return int(dt_local.timestamp() * 1000)
 
-def parse_hm(hm: str): 
+def parse_hm(hm: str):
     h, m = map(int, hm.split(":")); return h, m
 
 def iter_grid(day, start_hm, end_hm, step_min):
@@ -57,7 +63,7 @@ def probe(ts_ms: int, party: int, type_id: int) -> dict:
             "show_reservation_types": 1,
             "limit": 3,
         },
-        headers={"Accept":"application/json","User-Agent":"HillstoneWatch/1.0"},
+        headers={"Accept":"application/json","User-Agent":"HillstoneWatch/1.1"},
         timeout=15,
     )
     r.raise_for_status()
@@ -80,36 +86,71 @@ def format_when(iso_time: str|None, label: str|None, probed: datetime):
             return probed.strftime("%a %b %d"), lbl
     return probed.strftime("%a %b %d"), "(time?)"
 
+# ---------- Cross-run state via Gist ----------
+def gist_headers():
+    if not (GIST_ID and GIST_TOKEN):
+        return None
+    return {
+        "Authorization": f"token {GIST_TOKEN}",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "HillstoneWatchState/1.0",
+    }
+
+def load_seen():
+    if not (GIST_ID and GIST_TOKEN):
+        return {}
+    try:
+        resp = requests.get(f"https://api.github.com/gists/{GIST_ID}", headers=gist_headers(), timeout=15)
+        resp.raise_for_status()
+        files = resp.json().get("files", {})
+        content = files.get(STATE_FILENAME, {}).get("content", "{}")
+        data = json.loads(content)
+        # prune old entries
+        cutoff = int(time.time()) - STATE_TTL_DAYS*24*3600
+        return {k:v for k,v in data.items() if v >= cutoff}
+    except Exception:
+        return {}
+
+def save_seen(seen: dict):
+    if not (GIST_ID and GIST_TOKEN):
+        return
+    try:
+        payload = {
+            "files": {
+                STATE_FILENAME: {
+                    "content": json.dumps(seen, separators=(",",":"))
+                }
+            }
+        }
+        requests.patch(f"https://api.github.com/gists/{GIST_ID}", headers=gist_headers(), json=payload, timeout=15)
+    except Exception:
+        pass
+
+# ---------- Notifiers ----------
 def notify(lines: list[str]):
     if not lines: return
     text = "\n".join(lines)
-
-    # Pushover (if configured)
     if PUSHOVER_USER and PUSHOVER_TOKEN:
         try:
-            requests.post(
-                "https://api.pushover.net/1/messages.json",
+            requests.post("https://api.pushover.net/1/messages.json",
                 data={"token": PUSHOVER_TOKEN, "user": PUSHOVER_USER,
-                      "title": "Hillstone Park Ave", "message": text},
-                timeout=10,
-            )
+                      "title":"Hillstone Park Ave","message":text}, timeout=10)
         except Exception:
             pass
-
-    # Slack webhook (if configured)
     if SLACK_WEBHOOK:
         try:
             requests.post(SLACK_WEBHOOK, json={"text": text}, timeout=10)
         except Exception:
             pass
-
-    # Always print to logs too
     print(text)
 
 def run_once():
     svcs = enabled_services()
     today = datetime.now(tz=NYC).date()
-    found_keys, lines = set(), []
+    seen = load_seen()
+    now_ts = int(time.time())
+    lines = []
+    found_this_run = set()
 
     for i in range(DAYS_AHEAD):
         d = today + timedelta(days=i)
@@ -122,31 +163,36 @@ def run_once():
                     except Exception:
                         continue
                     for block in data.get("types", []):
-                        if block.get("reservation_type_id") != type_id: continue
+                        if block.get("reservation_type_id") != type_id: 
+                            continue
                         for slot in block.get("times", []):
                             iso  = slot.get("time")
                             label= slot.get("label") or slot.get("display_time")
                             url  = slot.get("booking_url") or slot.get("reserve_url") or LINK_BASE
 
                             date_str, time_str = format_when(iso, label, dt)
-                            key = (date_str, time_str, party, svc_name)
-                            if key in found_keys: continue
-                            found_keys.add(key)
+                            key = f"{date_str}|{time_str}|{party}|{svc_name}"
 
-                            # Candidate deep link with context (works if the site honors params)
+                            # suppress duplicates across runs
+                            if key in seen or key in found_this_run:
+                                continue
+                            seen[key] = now_ts
+                            found_this_run.add(key)
+
                             candidate = f"{LINK_BASE}?reservation_type_id={type_id}&party_size={party}&search_ts={ts}"
                             link = url or candidate
-
                             lines.append(
                                 f"Woohoo! New table for {party} on {date_str} @ {time_str} ({svc_name}). "
                                 f"Act fast! {link}"
                             )
-                time.sleep(0.05)  # be polite
+                time.sleep(0.05)
 
-    if not lines:
-        print("No openings this run.")
-    else:
+    # Save updated state & notify
+    save_seen(seen)
+    if lines:
         notify(lines)
+    else:
+        print("No NEW openings this run.")
 
 if __name__ == "__main__":
     run_once()

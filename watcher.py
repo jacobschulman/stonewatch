@@ -11,6 +11,7 @@ ENABLE_LUNCH  = os.getenv("ENABLE_LUNCH", "false").lower() == "true"
 DAYS_AHEAD    = int(os.getenv("DAYS_AHEAD", "3"))
 STEP_MIN      = int(os.getenv("STEP_MIN", "15"))
 LINK_BASE     = os.getenv("LINK_BASE", "https://example.com")
+RENOTIFY_MINUTES = int(os.getenv("RENOTIFY_MINUTES", "120"))  # 2 hours default
 
 # Notifications
 PUSHOVER_USER = os.getenv("PUSHOVER_USER")
@@ -208,12 +209,24 @@ def run_once():
 
                             date_str, time_str = format_when(iso, label, dt)
                             key = f"{date_str}|{time_str}|{party}|{svc_name}"
+                            
+                            # suppress duplicates across runs but allow re-notify after cooldown
+                            last_notified = int(seen.get(key, 0))  # previously alerted timestamp
+                            min_gap = RENOTIFY_MINUTES * 60        # convert to seconds
 
-                            # suppress duplicates across runs
-                            if key in seen or key in found_this_run:
+                            # skip if we've already handled this key in this run
+                            if key in found_this_run:
                                 continue
+                                
+                            # determine if enough time has passed to alert again
+                            should_notify = (last_notified == 0) or (now_ts - last_notified >= min_gap)
+                            if not should_notify:
+                                continue
+                                
+                            # mark as notified now
                             seen[key] = now_ts
                             found_this_run.add(key)
+
 
                             candidate = f"{LINK_BASE}?reservation_type_id={type_id}&party_size={party}&search_ts={ts}"
                             link = url or candidate

@@ -328,33 +328,36 @@ def run_once():
 
                             min_gap = RENOTIFY_MINUTES * 60
 
-                            # Decide if we should notify
-                            should_notify = False
+                            # Decide if we should notify (presence-aware)
+                            reappear = (last_notified > 0 and not was_present)  # was absent last run, now present
 
+                            should_notify = False
                             if last_notified == 0:
-                                # First sighting: always notify
+                                # First sighting: always notify (far-future already short-circuited above)
+                                should_notify = True
+                            elif reappear:
+                                # Disappeared then reappeared = new cancellation → notify even same-day
                                 should_notify = True
                             else:
-                                # Daily cap (only applies if a cap > 0)
+                                # Daily cap (only if a cap > 0)
                                 if daily_cap > 0 and last_notified_date == today_str:
-                                    # already notified for this slot today
                                     continue
-
-                                # Far-future suppression: once first-sighted, suppress re-notify while beyond max_days
+                                    
+                                # Guard: inside meal window only
                                 if lead_days > max_days:
                                     continue
 
-                                # When inside the window (<= max_days):
-                                #  - Re-notify at milestone boundaries (e.g., 3d -> 1d -> 0d) regardless of time gap
-                                #  - Otherwise fall back to cooldown window
+                                # Milestones or cooldown
                                 if milestone is not None and milestone != last_milestone:
                                     should_notify = True
                                 elif (now_ts - last_notified) >= min_gap:
                                     should_notify = True
-
+                                    
                             if not should_notify:
                                 continue
 
+
+                            
                             # Mark as notified now (persist richer record)
                             rec["last_notified"] = now_ts
                             rec["last_milestone"] = milestone
@@ -382,6 +385,13 @@ def run_once():
                             })
                             
                 time.sleep(0.05)
+
+    # Mark any previously-present slots that were NOT seen this run as absent
+    for k, r in list(seen.items()):
+        if isinstance(r, int):
+            continue  # upgrade to dict next time we see it
+    if r.get("present", False) and k not in present_this_run:
+        r["present"] = False
 
     # Save updated state & notify
     save_seen(seen)

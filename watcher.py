@@ -390,8 +390,8 @@ def run_once():
     for k, r in list(seen.items()):
         if isinstance(r, int):
             continue  # upgrade to dict next time we see it
-    if r.get("present", False) and k not in present_this_run:
-        r["present"] = False
+        if r.get("present", False) and k not in present_this_run:
+            r["present"] = False
 
     # Save updated state & notify
     save_seen(seen)

@@ -25,6 +25,12 @@ jobs:
           STEP_MIN: "15"              # 15-minute grid
           LINK_BASE: ${{ secrets.LINK_BASE }}   # booking page URL
           RENOTIFY_MINUTES: "40"   # re-notify cooldown (in minutes)
+          # --- Re-notify suppression knobs ---
+          LUNCH_MAX_DAYS: "2"        # no re-notify when >2 days away (first sighting only)
+          DINNER_MAX_DAYS: "3"       # no re-notify when >3 days away (first sighting only)
+          MILESTONES: "3,1,0"        # re-notify when lead_days crosses these buckets (e.g., 3→1→0)
+          DAILY_CAP_LUNCH: "1"         # max lunch alerts per slot per calendar day
+          DAILY_CAP_DINNER: "0"        # 0 = no cap (allow multiple dinner alerts same day)
 
           # --- Notifications (pick one or both) ---
           PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}

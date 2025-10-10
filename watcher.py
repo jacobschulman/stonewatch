@@ -264,6 +264,7 @@ def run_once():
     now_ts = int(time.time())
     items = []
     found_this_run = set()
+    present_this_run = set()
 
     for i in range(DAYS_AHEAD):
         d = today + timedelta(days=i)
@@ -305,6 +306,11 @@ def run_once():
                             rec = seen.get(key, {})
                             if isinstance(rec, int):
                                 rec = {"last_notified": int(rec)}
+
+                            # presence bookkeeping (used for reappear detection)
+                            was_present = bool(rec.get("present", False))  # present in previous run?
+                            rec["present"] = True                          # mark present now
+                            present_this_run.add(key)
 
                             last_notified      = int(rec.get("last_notified", 0))
                             last_milestone     = rec.get("last_milestone")

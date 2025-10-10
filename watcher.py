@@ -294,6 +294,12 @@ def run_once():
                             # Compute slot datetime + lead days (NYC-local)
                             slot_dt_nyc = compute_slot_dt_nyc(iso, label, dt)
                             lead_days = lead_days_int(slot_dt_nyc)
+                            # Absolute far-future suppression by meal (even first sighting)
+                            if svc_name.lower().startswith("lunch") and lead_days > LUNCH_MAX_DAYS:
+                                continue
+                            if svc_name.lower().startswith("dinner") and lead_days > DINNER_MAX_DAYS:
+                                continue
+
 
                             # Pull prior record from Gist, backward-compatible with old int format
                             rec = seen.get(key, {})

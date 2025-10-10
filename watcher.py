@@ -358,7 +358,6 @@ def run_once():
                             msg = f"{date_str} @ {time_str}, for {party}. Act fast!"
                             
                             # --- Log it before adding to items ---
-                            slot_dt_nyc = compute_slot_dt_nyc(iso, label, dt)
                             seen_dt_utc = datetime.now(timezone.utc)
                             log_slot_event(slot_dt_nyc, seen_dt_utc, svc_name, party, MERCHANT_ID, "wisely")
 

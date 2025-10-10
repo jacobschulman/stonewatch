@@ -285,25 +285,72 @@ def run_once():
 
                             date_str, time_str = format_when(iso, label, dt)
                             key = f"{MERCHANT_ID}|{date_str}|{time_str}|{party}|{svc_name}"
-                            
-                            # suppress duplicates across runs but allow re-notify after cooldown
-                            last_notified = int(seen.get(key, 0))  # previously alerted timestamp
-                            min_gap = RENOTIFY_MINUTES * 60        # convert to seconds
 
-                            # skip if we've already handled this key in this run
+      # --- Hybrid de-dupe & re-notify logic (meal-aware + milestones + cooldown) ---
+
+                            # Build the per-slot key (already future-proofed with merchant id)
+                            key = f"{MERCHANT_ID}|{date_str}|{time_str}|{party}|{svc_name}"
+
+                            # Compute slot datetime + lead days (NYC-local)
+                            slot_dt_nyc = compute_slot_dt_nyc(iso, label, dt)
+                            lead_days = lead_days_int(slot_dt_nyc)
+
+                            # Pull prior record from Gist, backward-compatible with old int format
+                            rec = seen.get(key, {})
+                            if isinstance(rec, int):
+                                rec = {"last_notified": int(rec)}
+
+                            last_notified      = int(rec.get("last_notified", 0))
+                            last_milestone     = rec.get("last_milestone")
+                            last_notified_date = rec.get("last_notified_date")  # "YYYY-MM-DD" (NYC calendar day string)
+
+                            # Per-run de-dupe
                             if key in found_this_run:
                                 continue
-                                
-                            # determine if enough time has passed to alert again
-                            should_notify = (last_notified == 0) or (now_ts - last_notified >= min_gap)
+
+                            # Meal-aware limits / caps
+                            max_days    = max_days_for(svc_name)           # e.g., lunch 2, dinner 3 by default
+                            daily_cap   = daily_cap_for(svc_name)          # e.g., lunch 1/day, dinner 0 (= no cap)
+                            today_str   = nyc_today_str()
+                            milestone   = current_milestone(lead_days)     # e.g., from [3,1,0], returns 3/1/0/None
+
+                            min_gap = RENOTIFY_MINUTES * 60
+
+                            # Decide if we should notify
+                            should_notify = False
+
+                            if last_notified == 0:
+                                # First sighting: always notify
+                                should_notify = True
+                            else:
+                                # Daily cap (only applies if a cap > 0)
+                                if daily_cap > 0 and last_notified_date == today_str:
+                                    # already notified for this slot today
+                                    continue
+
+                                # Far-future suppression: once first-sighted, suppress re-notify while beyond max_days
+                                if lead_days > max_days:
+                                    continue
+
+                                # When inside the window (<= max_days):
+                                #  - Re-notify at milestone boundaries (e.g., 3d -> 1d -> 0d) regardless of time gap
+                                #  - Otherwise fall back to cooldown window
+                                if milestone is not None and milestone != last_milestone:
+                                    should_notify = True
+                                elif (now_ts - last_notified) >= min_gap:
+                                    should_notify = True
+
                             if not should_notify:
                                 continue
-                                
-                            # mark as notified now
-                            seen[key] = now_ts
+
+                            # Mark as notified now (persist richer record)
+                            rec["last_notified"] = now_ts
+                            rec["last_milestone"] = milestone
+                            rec["last_notified_date"] = today_str
+                            seen[key] = rec
                             found_this_run.add(key)
 
-
+                            
                             candidate = f"{LINK_BASE}?reservation_type_id={type_id}&party_size={party}&search_ts={ts}"
                             link = url or candidate
 

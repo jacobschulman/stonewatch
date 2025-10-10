@@ -22,3 +22,4 @@ seen_at_iso,slot_at_iso,lead_minutes,lead_hours,service,party_size,weekday_slot,
 2025-10-09T21:53:27+00:00,2025-10-10T15:00:00-04:00,1267,21.1,Lunch,4,Fri,Thu,15,278278,wisely
 2025-10-09T22:14:54+00:00,2025-10-10T15:15:00-04:00,1260,21.0,Lunch,2,Fri,Thu,15,278278,wisely
 2025-10-09T23:11:27+00:00,2025-10-10T21:15:00-04:00,1564,26.1,Dinner,2,Fri,Thu,21,278278,wisely
+2025-10-10T02:40:02+00:00,2025-10-13T21:00:00-04:00,5660,94.3,Dinner,2,Mon,Thu,21,278278,wisely

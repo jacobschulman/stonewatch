@@ -12,6 +12,11 @@ DAYS_AHEAD    = int(os.getenv("DAYS_AHEAD", "3"))
 STEP_MIN      = int(os.getenv("STEP_MIN", "15"))
 LINK_BASE     = os.getenv("LINK_BASE", "https://example.com")
 RENOTIFY_MINUTES = int(os.getenv("RENOTIFY_MINUTES", "120"))  # 2 hours default
+LUNCH_MAX_DAYS   = int(os.getenv("LUNCH_MAX_DAYS",   "2"))
+DINNER_MAX_DAYS  = int(os.getenv("DINNER_MAX_DAYS",  "3"))
+MILESTONES       = [int(x) for x in os.getenv("MILESTONES", "3,1,0").split(",") if x.strip()]
+DAILY_CAP_LUNCH  = int(os.getenv("DAILY_CAP_LUNCH",  "1"))
+DAILY_CAP_DINNER = int(os.getenv("DAILY_CAP_DINNER", "0"))
 
 # Notifications
 PUSHOVER_USER = os.getenv("PUSHOVER_USER")
@@ -227,6 +232,28 @@ def compute_slot_dt_nyc(iso, label, probed_dt_nyc):
         except Exception:
             return probed_dt_nyc
     return probed_dt_nyc
+
+def nyc_today_str():
+    return datetime.now(NYC).strftime("%Y-%m-%d")
+
+def lead_days_int(slot_dt_nyc):
+    """Whole days between now (NYC) and the slot. Floor at 0 for past/same-day quirks."""
+    delta = (slot_dt_nyc.date() - datetime.now(NYC).date()).days
+    return max(delta, 0)
+
+def current_milestone(lead_days: int) -> int | None:
+    """
+    Given a list like [3,1,0], return the highest milestone reached for the current lead_days.
+    Example: lead_days=2 -> 3; lead_days=1 -> 1; lead_days=0 -> 0; lead_days=5 -> None
+    """
+    reached = [m for m in MILESTONES if lead_days <= m]
+    return max(reached) if reached else None
+
+def daily_cap_for(service_name: str) -> int:
+    return DAILY_CAP_LUNCH if service_name.lower().startswith("lunch") else DAILY_CAP_DINNER
+
+def max_days_for(service_name: str) -> int:
+    return LUNCH_MAX_DAYS if service_name.lower().startswith("lunch") else DINNER_MAX_DAYS
 
 # RUN ONCE NOTIFICATION SETTINGS
 

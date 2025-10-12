@@ -265,7 +265,7 @@ def run_once():
     items = []
     found_this_run = set()
     present_this_run = set()
-    _batched = {}  # key: (date_str, time_str, svc_name) -> {"sizes": set[int], "link": str}
+
     for i in range(DAYS_AHEAD):
         d = today + timedelta(days=i)
         for svc_name, type_id, (start_hm, end_hm) in svcs:
@@ -376,15 +376,14 @@ def run_once():
                             seen_dt_utc = datetime.now(timezone.utc)
                             log_slot_event(slot_dt_nyc, seen_dt_utc, svc_name, party, MERCHANT_ID, "wisely")
 
-                            # --- Batch by (date, time, service) so 2/4 become a single message
-                            _dt_key = (date_str, time_str, svc_name)
-                            _entry = _batched.get(_dt_key)
-                            if not _entry:
-                                _batched[_dt_key] = {"sizes": set([party]), "link": link}
-                            else:
-                                _entry["sizes"].add(party)
-                                # keep first link; or overwrite with LINK_BASE here if you prefer
-                
+                            # --- Then append the notification item ---
+                            items.append({
+                                "title": fun_title,
+                                "message": msg,
+                                "url": link,
+                                "url_title": "Reserve Now"
+                            })
+                            
                 time.sleep(0.05)
 
     # Mark any previously-present slots that were NOT seen this run as absent
@@ -395,36 +394,11 @@ def run_once():
             r["present"] = False
 
     # Save updated state & notify
-    # Convert grouped slots into single notifications per time
-    if _batched:
-        fun_title = f"🍸🚨 Hillstone Resy 🚨🍸"
-        for (date_str, time_str, svc_name), _payload in _batched.items():
-            _phrase = _format_sizes_phrase(_payload["sizes"])
-            if not _phrase:
-                continue  # skip if only non-2/4 sizes slipped in
-            _msg = f"{date_str} @ {time_str}, for {_phrase}. Act fast!"
-            items.append({
-                "title": fun_title,
-                "message": _msg,
-                "url": _payload["link"],
-                "url_title": "Reserve Now"
-            })
     save_seen(seen)
     if items:
         notify(items)
     else:
         print("No NEW openings this run.")
 
-# --- helper: format sizes as "2", "4", or "2 or 4"
-def _format_sizes_phrase(_sizes: set[int]):
-    if _sizes == {2}:
-        return "2"
-    if _sizes == {4}:
-        return "4"
-    if _sizes == {2, 4}:
-        return "2 or 4"
-    return None
-
 if __name__ == "__main__":
     run_once()
-

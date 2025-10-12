@@ -370,20 +370,15 @@ def run_once():
                             candidate = f"{LINK_BASE}?reservation_type_id={type_id}&party_size={party}&search_ts={ts}"
                             link = url or candidate
 
-                            fun_title = f"🍸🚨 Hillstone Resy 🚨🍸"
-                            msg = f"{date_str} @ {time_str}, for {party}. Act fast!"
-                            
-                            # --- Log it before adding to items ---
+                            # --- Log it ---
                             seen_dt_utc = datetime.now(timezone.utc)
                             log_slot_event(slot_dt_nyc, seen_dt_utc, svc_name, party, MERCHANT_ID, "wisely")
 
-                            # --- Then append the notification item ---
-                            items.append({
-                                "title": fun_title,
-                                "message": msg,
-                                "url": link,
-                                "url_title": "Reserve Now"
-                            })
+                            # --- Group by time slot for combined notifications ---
+                            slot_key = (date_str, time_str, svc_name)
+                            if slot_key not in grouped_slots:
+                                grouped_slots[slot_key] = []
+                            grouped_slots[slot_key].append((party, link))
                             
                 time.sleep(0.05)
 

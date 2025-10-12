@@ -38,7 +38,7 @@ NYC = ZoneInfo("America/New_York")
 BASE_URL = "https://loyaltyapi.wisely.io/v2/web/reservations/inventory"
 RES_TYPE_ID = {"Dinner": 1695, "Lunch": 1862}
 DINNER_WINDOW = ("17:00", "22:15")
-LUNCH_WINDOW  = ("11:15", "14:30")
+LUNCH_WINDOW  = ("11:15", "14:00")
 
 def enabled_services():
     svcs = []

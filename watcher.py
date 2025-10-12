@@ -263,6 +263,7 @@ def run_once():
     seen = load_seen()
     now_ts = int(time.time())
     items = []
+    grouped_slots = {}  # key: (date_str, time_str, svc_name), value: list of (party, link)
     found_this_run = set()
     present_this_run = set()
 
@@ -386,6 +387,24 @@ def run_once():
                             
                 time.sleep(0.05)
 
+    # Build combined notifications from grouped slots
+    for (date_str, time_str, svc_name), parties_info in grouped_slots.items():
+        parties = sorted([p for p, _ in parties_info])
+        party_str = " or ".join(str(p) for p in parties)
+        
+        # Use the first link
+        link = parties_info[0][1]
+        
+        fun_title = f"🍸🚨 Hillstone Resy 🚨🍸"
+        msg = f"{date_str} @ {time_str}, for {party_str}. Act fast!"
+        
+        items.append({
+            "title": fun_title,
+            "message": msg,
+            "url": link,
+            "url_title": "Reserve Now"
+        })
+    
     # Mark any previously-present slots that were NOT seen this run as absent
     for k, r in list(seen.items()):
         if isinstance(r, int):

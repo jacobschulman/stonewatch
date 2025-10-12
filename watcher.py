@@ -415,9 +415,6 @@ def run_once():
     else:
         print("No NEW openings this run.")
 
-if __name__ == "__main__":
-    run_once()
-
 # --- helper: format sizes as "2", "4", or "2 or 4"
 def _format_sizes_phrase(_sizes: set[int]):
     if _sizes == {2}:
@@ -427,3 +424,7 @@ def _format_sizes_phrase(_sizes: set[int]):
     if _sizes == {2, 4}:
         return "2 or 4"
     return None
+
+if __name__ == "__main__":
+    run_once()
+

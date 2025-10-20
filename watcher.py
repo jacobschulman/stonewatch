@@ -333,31 +333,39 @@ def run_once():
                             reappear = (last_notified > 0 and not was_present)  # was absent last run, now present
 
                             should_notify = False
+                            notify_reason = None
+                            
                             if last_notified == 0:
                                 # First sighting: always notify (far-future already short-circuited above)
                                 should_notify = True
+                                notify_reason = "FIRST_SIGHTING"
                             elif reappear:
                                 # Disappeared then reappeared = new cancellation → notify even same-day
                                 should_notify = True
+                                notify_reason = "REAPPEARED"
                             else:
                                 # Daily cap (only if a cap > 0)
                                 if daily_cap > 0 and last_notified_date == today_str:
+                                    print(f"⏭️  SKIP (daily cap): {date_str} @ {time_str} for {party} - already notified today")
                                     continue
                                     
                                 # Guard: inside meal window only
                                 if lead_days > max_days:
+                                    print(f"⏭️  SKIP (too far): {date_str} @ {time_str} for {party} - {lead_days} days away")
                                     continue
-
+                            
                                 # Milestones or cooldown
                                 if milestone is not None and milestone != last_milestone:
                                     should_notify = True
+                                    notify_reason = f"MILESTONE_{milestone}"
                                 elif (now_ts - last_notified) >= min_gap:
                                     should_notify = True
-                                    
-                            if not should_notify:
+                                    notify_reason = f"COOLDOWN_{int((now_ts - last_notified)/60)}min"
+                            
+                            if should_notify:
+                                print(f"✅ NOTIFY ({notify_reason}): {date_str} @ {time_str} for {party}, lead={lead_days}d, last={int((now_ts-last_notified)/60)}min ago")
+                            else:
                                 continue
-
-
                             
                             # Mark as notified now (persist richer record)
                             rec["last_notified"] = now_ts

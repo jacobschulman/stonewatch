@@ -308,12 +308,17 @@ def run_once():
                             if isinstance(rec, int):
                                 rec = {"last_notified": int(rec)}
 
+                            # *** Debugging line to figure out logging issues *** #
+                            print(f"🔍 Key: {key[:50]}... | rec type: {type(rec)} | rec content: {rec}")
+
                             # presence bookkeeping (used for reappear detection)
                             was_present = bool(rec.get("present", False))  # present in previous run?
                             rec["present"] = True                          # mark present now
                             present_this_run.add(key)
 
                             last_notified      = int(rec.get("last_notified", 0))
+                            # *** Debugging line added to figure out logging ***
+                            print(f"   📅 last_notified extracted: {last_notified} | now_ts: {now_ts} | diff: {(now_ts-last_notified)/60} min")
                             last_milestone     = rec.get("last_milestone")
                             last_notified_date = rec.get("last_notified_date")  # "YYYY-MM-DD" (NYC calendar day string)
 

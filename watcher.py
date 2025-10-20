@@ -287,11 +287,9 @@ def run_once():
 
                             date_str, time_str = format_when(iso, label, dt)
                             key = f"{MERCHANT_ID}|{date_str}|{time_str}|{party}|{svc_name}"
-
-      # --- Hybrid de-dupe & re-notify logic (meal-aware + milestones + cooldown) ---
-
-                            # Build the per-slot key (already future-proofed with merchant id)
-                            key = f"{MERCHANT_ID}|{date_str}|{time_str}|{party}|{svc_name}"
+                            # Skip if already seen this slot in this run
+                            if key in found_this_run:
+                                continue
 
                             # Compute slot datetime + lead days (NYC-local)
                             slot_dt_nyc = compute_slot_dt_nyc(iso, label, dt)
@@ -321,10 +319,6 @@ def run_once():
                             print(f"   📅 last_notified extracted: {last_notified} | now_ts: {now_ts} | diff: {(now_ts-last_notified)/60} min")
                             last_milestone     = rec.get("last_milestone")
                             last_notified_date = rec.get("last_notified_date")  # "YYYY-MM-DD" (NYC calendar day string)
-
-                            # Per-run de-dupe
-                            if key in found_this_run:
-                                continue
 
                             # Meal-aware limits / caps
                             max_days    = max_days_for(svc_name)           # e.g., lunch 2, dinner 3 by default

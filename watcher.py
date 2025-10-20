@@ -414,6 +414,30 @@ def run_once():
         if r.get("present", False) and k not in present_this_run:
             r["present"] = False
 
+    # --- Summary Statistics ---
+    print("\n" + "="*60)
+    print("📊 RUN SUMMARY")
+    print("="*60)
+    print(f"Total slots checked: {len(present_this_run)}")
+    print(f"New slots found this run: {len(found_this_run)}")
+    print(f"Notifications sent: {len(items)}")
+    
+    if found_this_run:
+        print(f"\n📍 Slots found:")
+        for key in sorted(found_this_run):
+            parts = key.split("|")
+            print(f"  - {parts[1]} @ {parts[2]} for {parts[3]} ({parts[4]})")
+    
+    if items:
+        print(f"\n✉️  Notifications sent:")
+        for item in items:
+            print(f"  - {item['message']}")
+    
+    print("="*60 + "\n")
+
+    # Save updated state & notify
+    save_seen(seen)
+    
     # Save updated state & notify
     save_seen(seen)
     if items:

@@ -108,17 +108,30 @@ def gist_headers():
 
 def load_seen():
     if not (GIST_ID and GIST_TOKEN):
+        print("⚠️  No GIST_ID or GIST_TOKEN - skipping load")
         return {}
     try:
+        print(f"📥 Attempting to load from Gist {GIST_ID}")
         resp = requests.get(f"https://api.github.com/gists/{GIST_ID}", headers=gist_headers(), timeout=15)
         resp.raise_for_status()
         files = resp.json().get("files", {})
+        print(f"📁 Files in Gist: {list(files.keys())}")
         content = files.get(STATE_FILENAME, {}).get("content", "{}")
+        print(f"📄 Content length: {len(content)} chars")
         data = json.loads(content)
+        print(f"📊 Parsed {len(data)} entries from Gist")
+        
         # prune old entries
         cutoff = int(time.time()) - STATE_TTL_DAYS*24*3600
-        return {k:v for k,v in data.items() if v >= cutoff}
-    except Exception:
+        pruned = {}
+        for k, v in data.items():
+            timestamp = v if isinstance(v, int) else v.get("last_notified", 0) if isinstance(v, dict) else 0
+            if timestamp >= cutoff:
+                pruned[k] = v
+        print(f"✅ After pruning: {len(pruned)} entries remain")
+        return pruned
+    except Exception as e:
+        print(f"❌ Error loading Gist: {e}")
         return {}
 
 def save_seen(seen: dict):

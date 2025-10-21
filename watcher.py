@@ -313,14 +313,16 @@ def run_once():
                             if svc_name.lower().startswith("dinner") and lead_days > DINNER_MAX_DAYS:
                                 continue
 
+                            # --- Log every slot found (for data collection) ---
+                            seen_dt_utc = datetime.now(timezone.utc)
+                            log_slot_event(slot_dt_nyc, seen_dt_utc, svc_name, party, MERCHANT_ID, "wisely")
+
 
                             # Pull prior record from Gist, backward-compatible with old int format
                             rec = seen.get(key, {})
                             if isinstance(rec, int):
                                 rec = {"last_notified": int(rec)}
 
-                            # *** Debugging line to figure out logging issues *** #
-                            print(f"🔍 Key: {key[:50]}... | rec type: {type(rec)} | rec content: {rec}")
 
                             # presence bookkeeping (used for reappear detection)
                             was_present = bool(rec.get("present", False))  # present in previous run?
@@ -328,8 +330,6 @@ def run_once():
                             present_this_run.add(key)
 
                             last_notified      = int(rec.get("last_notified", 0))
-                            # *** Debugging line added to figure out logging ***
-                            print(f"   📅 last_notified extracted: {last_notified} | now_ts: {now_ts} | diff: {(now_ts-last_notified)/60} min")
                             last_milestone     = rec.get("last_milestone")
                             last_notified_date = rec.get("last_notified_date")  # "YYYY-MM-DD" (NYC calendar day string)
 
@@ -389,10 +389,6 @@ def run_once():
                             
                             candidate = f"{LINK_BASE}?reservation_type_id={type_id}&party_size={party}&search_ts={ts}"
                             link = url or candidate
-
-                            # --- Log it ---
-                            seen_dt_utc = datetime.now(timezone.utc)
-                            log_slot_event(slot_dt_nyc, seen_dt_utc, svc_name, party, MERCHANT_ID, "wisely")
 
                             # --- Group by time slot for combined notifications ---
                             slot_key = (date_str, time_str, svc_name)

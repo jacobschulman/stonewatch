@@ -5,6 +5,9 @@ from zoneinfo import ZoneInfo
 
 # ---- Config via ENV ----
 MERCHANT_ID   = os.getenv("MERCHANT_ID", "278278")
+RESTAURANT_NAME  = os.getenv("RESTAURANT_NAME", "Hillstone NYC")
+TIMEZONE         = os.getenv("TIMEZONE", "America/New_York")
+NOTIFICATION_PREFIX = os.getenv("NOTIFICATION_PREFIX", "🍸🚨 New Resy 🚨🍸")
 PARTY_SIZES   = [int(x) for x in os.getenv("PARTY_SIZES", "2,4").split(",")]
 ENABLE_DINNER = os.getenv("ENABLE_DINNER", "true").lower() == "true"
 ENABLE_LUNCH  = os.getenv("ENABLE_LUNCH", "false").lower() == "true"
@@ -30,11 +33,11 @@ PUSHOVER_URL_TITLE_DEFAULT = os.getenv("PUSHOVER_URL_TITLE", "Book now")
 # Gist state (cross-run dedupe)
 GIST_ID       = os.getenv("GIST_ID")      # required for cross-run dedupe
 GIST_TOKEN    = os.getenv("GIST_TOKEN")   # required for cross-run dedupe
-STATE_FILENAME= "seen.json"
+STATE_FILENAME = f"seen_{MERCHANT_ID}.json"
 STATE_TTL_DAYS= 5  # keep keys for 5 days, then prune
 
 # ---- Constants ----
-NYC = ZoneInfo("America/New_York")
+NYC = ZoneInfo(TIMEZONE)
 BASE_URL = "https://loyaltyapi.wisely.io/v2/web/reservations/inventory"
 RES_TYPE_ID = {"Dinner": 1695, "Lunch": 1862}
 DINNER_WINDOW = ("17:00", "22:15")
@@ -73,7 +76,7 @@ def probe(ts_ms: int, party: int, type_id: int) -> dict:
             "show_reservation_types": 1,
             "limit": 3,
         },
-        headers={"Accept":"application/json","User-Agent":"HillstoneWatch/1.1"},
+        headers={"Accept":"application/json","User-Agent":"Resyatch/1.1"},
         timeout=15,
     )
     r.raise_for_status()
@@ -103,7 +106,7 @@ def gist_headers():
     return {
         "Authorization": f"token {GIST_TOKEN}",
         "Accept": "application/vnd.github+json",
-        "User-Agent": "HillstoneWatchState/1.0",
+        "User-Agent": "ResyWatchState/1.0",
     }
 
 def load_seen():
@@ -200,7 +203,7 @@ def notify(items: list[dict]):
         print(f"{title} — {text}")
 
 # ---------- Logging setup ----------
-LOG_FILE = "availability_log.csv"
+LOG_FILE = f"availability_log_{MERCHANT_ID}.csv"
 CSV_HEADER = [
     "seen_at_iso", "slot_at_iso",
     "lead_minutes", "lead_hours",
@@ -406,7 +409,7 @@ def run_once():
         # Use the first link
         link = parties_info[0][1]
         
-        fun_title = f"🍸🚨 Hillstone Resy 🚨🍸"
+        fun_title = NOTIFICATION_PREFIX
         msg = f"{date_str} @ {time_str}, for {party_str}. Act fast!"
         
         items.append({

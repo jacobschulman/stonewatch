@@ -290,7 +290,7 @@ def run_once():
                 ts = to_epoch_ms(dt)
                 for party in PARTY_SIZES:
                     try:
-
+                        data = probe(ts, party, type_id)
                     except Exception as e:
                         print(f"❌ Probe failed: {e}")
                         continue

@@ -1,4 +1,4 @@
-name: hillstone-watch
+name: hillstone-nyc-watch
 
 on:
   schedule:
@@ -20,6 +20,9 @@ jobs:
       - name: Run watcher
         env:
           MERCHANT_ID: "278278"
+          RESTAURANT_NAME: "Hillstone NYC"  
+          TIMEZONE: "America/New_York"  
+          NOTIFICATION_PREFIX: "🍸🚨 Hillstone NYC Resy 🚨🍸"
           PARTY_SIZES: "2,4"          # scan both 2 and 4
           ENABLE_DINNER: "true"       # "true" / "false"
           ENABLE_LUNCH: "true"       # set "true" if you want lunch too
@@ -35,9 +38,9 @@ jobs:
           DAILY_CAP_DINNER: "0"        # 0 = no cap (allow multiple dinner alerts same day)
 
           # --- Notifications (pick one or both) ---
-          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
-          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER_HILLSTONE_NYC }}
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKE_HILLSTONE_NYC }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_HILLSTONE_NYC }}
 
           # --- GIST SETUP FOR DEDUPING --- 
           GIST_ID: ${{ secrets.GIST_ID }}

@@ -39,7 +39,7 @@ jobs:
 
           # --- Notifications (pick one or both) ---
           PUSHOVER_USER: ${{ secrets.PUSHOVER_USER_HILLSTONE_NYC }}
-          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKE_HILLSTONE_NYC }}
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN_HILLSTONE_NYC }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_HILLSTONE_NYC }}
 
           # --- GIST SETUP FOR DEDUPING --- 

@@ -290,8 +290,11 @@ def run_once():
                 ts = to_epoch_ms(dt)
                 for party in PARTY_SIZES:
                     try:
+                        print(f"🔍 Probing {svc_name} {date_str} {time_str} for party {party}")
                         data = probe(ts, party, type_id)
-                    except Exception:
+                        print(f"✅ Got {len(data.get('types', []))} types back")
+                    except Exception as e:
+                        print(f"❌ Probe failed: {e}")
                         continue
                     for block in data.get("types", []):
                         if block.get("reservation_type_id") != type_id: 

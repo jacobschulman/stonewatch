@@ -76,7 +76,13 @@ def probe(ts_ms: int, party: int, type_id: int) -> dict:
             "show_reservation_types": 1,
             "limit": 3,
         },
-        headers={"Accept":"application/json","User-Agent":"Resyatch/1.1"},
+        headers={
+            "Accept": "application/json",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "olo-application-name": "engage-host-public-widget",
+            "origin": "https://reservations.getwisely.com",
+            "referer": "https://reservations.getwisely.com/"
+        },
         timeout=15,
     )
     r.raise_for_status()

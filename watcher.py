@@ -290,9 +290,7 @@ def run_once():
                 ts = to_epoch_ms(dt)
                 for party in PARTY_SIZES:
                     try:
-                        print(f"🔍 Probing {svc_name} {date_str} {time_str} for party {party}")
-                        data = probe(ts, party, type_id)
-                        print(f"✅ Got {len(data.get('types', []))} types back")
+
                     except Exception as e:
                         print(f"❌ Probe failed: {e}")
                         continue
@@ -305,6 +303,7 @@ def run_once():
                             url  = slot.get("booking_url") or slot.get("reserve_url") or LINK_BASE
 
                             date_str, time_str = format_when(iso, label, dt)
+                            print(f"🔍 Found slot: {svc_name} {date_str} @ {time_str} for party {party}")
                             key = f"{MERCHANT_ID}|{date_str}|{time_str}|{party}|{svc_name}"
                             # Skip if already seen this slot in this run
                             if key in found_this_run:

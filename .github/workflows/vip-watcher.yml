@@ -1,0 +1,66 @@
+name: stonewatch-vip
+
+on:
+  schedule:
+    - cron: "* * * * *"      # runs every 1 minute (when VIP windows are active)
+
+  workflow_dispatch:         # manual trigger for testing
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: Run VIP watcher
+        env:
+          # --- VIP WINDOWS CONFIGURATION ---
+          # Format: Each line is one VIP window
+          # DATE,START_TIME,END_TIME,PARTY_SIZES
+          # Example: 2025-01-15,18:00,20:00,2,4
+          #          2025-01-22,19:00,21:00,2
+          #
+          # Multiple party sizes = check for all (2,4 means check both)
+          # Times are in restaurant timezone (America/New_York)
+          # Windows auto-expire after end_time passes
+          VIP_WINDOWS: |
+            2025-11-19,18:00,20:00,4
+            2025-11-21,18:00,21:00,4
+
+          # --- Restaurant Settings ---
+          MERCHANT_ID: "278278"
+          RESTAURANT_NAME: "Hillstone NYC"
+          TIMEZONE: "America/New_York"
+
+          # --- VIP-Specific Settings ---
+          NOTIFICATION_PREFIX: "🔥💎 VIP TABLE ALERT 💎🔥"
+          STEP_MIN: "15"              # 15-minute probe grid
+          LINK_BASE: ${{ secrets.LINK_BASE }}
+
+          # --- Randomization (avoid detection) ---
+          RANDOMIZE_DELAY: "true"     # adds 0-30s random delay before checking
+          RANDOM_STAGGER_MS: "50,200" # random delay between API calls (ms)
+
+          # --- Safety Limits ---
+          MAX_CHECKS_PER_HOUR: "120"  # safety: never exceed this many API calls/hour
+
+          # --- VIP Notifications (separate from base monitor) ---
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER_VIP }}
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN_VIP }}
+          PUSHOVER_SOUND: "magic"     # Use a distinct sound for VIP alerts
+          PUSHOVER_PRIORITY: "1"      # High priority (1) for VIP alerts
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_VIP }}
+
+          # --- State (separate Gist for VIP dedupe) ---
+          GIST_ID: ${{ secrets.GIST_ID_VIP }}
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+
+          # --- Debugging ---
+          DEBUG: "true"
+        run: python vip_watcher.py
+
+      # No log commits for VIP watcher - keeps it lightweight

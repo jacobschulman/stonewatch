@@ -49,7 +49,7 @@ jobs:
           MAX_CHECKS_PER_HOUR: "2000"  # safety: never exceed this many API calls/hour (22 slots × 60 min = 1320)
 
           # --- Testing ---
-          TEST_NOTIFICATION: "true"   # set to "true" to send test alert on startup
+          TEST_NOTIFICATION: "false"   # set to "true" to send test alert on startup
 
           # --- VIP Notifications (separate from base monitor) ---
           PUSHOVER_USER: ${{ secrets.PUSHOVER_USER_VIP }}

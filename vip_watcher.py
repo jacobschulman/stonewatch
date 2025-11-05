@@ -23,6 +23,9 @@ except:
 # Safety limits
 MAX_CHECKS_PER_HOUR = int(os.getenv("MAX_CHECKS_PER_HOUR", "120"))
 
+# Testing
+TEST_NOTIFICATION = os.getenv("TEST_NOTIFICATION", "false").lower() == "true"
+
 # Notifications
 PUSHOVER_USER = os.getenv("PUSHOVER_USER")
 PUSHOVER_TOKEN = os.getenv("PUSHOVER_TOKEN")
@@ -309,6 +312,25 @@ def notify(items: list[dict]):
         # Console log
         print(f"📣 {title} — {text}")
 
+def send_test_notification():
+    """Send a test notification to verify Pushover/Slack are working"""
+    print("🧪 TEST NOTIFICATION ENABLED - Sending test alert...")
+
+    test_item = {
+        "title": "🧪 VIP Watcher Test",
+        "message": "If you see this, VIP notifications are working correctly! ✅",
+        "url": "https://github.com",
+        "url_title": "GitHub Actions"
+    }
+
+    try:
+        notify([test_item])
+        print("✅ Test notification sent successfully!")
+        return True
+    except Exception as e:
+        print(f"❌ Test notification failed: {e}")
+        return False
+
 # ---- Safety Tracking ----
 class RateLimiter:
     def __init__(self, max_per_hour: int):
@@ -338,6 +360,11 @@ def run_vip_watcher():
     print(f"Merchant ID: {MERCHANT_ID}")
     print(f"Timezone: {TIMEZONE}")
     print("")
+
+    # Send test notification if enabled
+    if TEST_NOTIFICATION:
+        send_test_notification()
+        print("")
 
     # Optional: random delay at start (0-30s) to avoid detection patterns
     if RANDOMIZE_DELAY:
@@ -375,14 +402,21 @@ def run_vip_watcher():
     # Rate limiter
     limiter = RateLimiter(MAX_CHECKS_PER_HOUR)
 
-    # Track findings
+    # Track findings and stats
     notifications = []
     api_calls_made = 0
+    api_calls_failed = 0
     total_slots_checked = 0
     found_this_run = set()  # prevent duplicate notifications in same run
+    window_stats = {}  # track slots per window
+    service_stats = {}  # track slots per service type (Lunch/Dinner)
+    start_time = time.time()
 
     # Check each active window
     for window in active_windows:
+        window_key = f"{window['date']}"
+        window_stats[window_key] = 0
+
         print(f"🔍 Checking VIP window: {window['date']} {window['start_time'][0]:02d}:{window['start_time'][1]:02d}-{window['end_time'][0]:02d}:{window['end_time'][1]:02d}")
 
         # Generate time slots to probe
@@ -402,20 +436,35 @@ def run_vip_watcher():
                     break
 
                 total_slots_checked += 1
+                window_stats[window_key] += 1
+                service_stats[service_name] = service_stats.get(service_name, 0) + 1
 
                 # Random stagger between API calls
                 if RANDOM_STAGGER:
                     delay_ms = random.randint(*RANDOM_STAGGER)
                     time.sleep(delay_ms / 1000.0)
 
-                # Probe API
+                # Probe API with detailed logging
+                slot_time_str = slot_dt.strftime('%Y-%m-%d %H:%M')
+                print(f"  ⏰ Probing: {slot_time_str}, party {party}, {service_name}", end=" ")
+
                 try:
                     ts_ms = to_epoch_ms(slot_dt)
                     data = probe(ts_ms, party, type_id)
                     api_calls_made += 1
                     limiter.record_call()
+
+                    # Count how many slots returned
+                    slots_returned = 0
+                    for block in data.get("types", []):
+                        if block.get("reservation_type_id") == type_id:
+                            slots_returned += len(block.get("times", []))
+
+                    print(f"→ ✅ API success ({slots_returned} slot{'s' if slots_returned != 1 else ''})")
+
                 except Exception as e:
-                    print(f"❌ API error for {slot_dt.strftime('%Y-%m-%d %H:%M')} party {party}: {e}")
+                    api_calls_failed += 1
+                    print(f"→ ❌ API failed: {e}")
                     continue
 
                 # Parse results
@@ -466,14 +515,43 @@ def run_vip_watcher():
                         })
 
     # Summary
+    elapsed_time = time.time() - start_time
+
     print("")
     print("="*60)
     print("📊 VIP WATCHER SUMMARY")
     print("="*60)
     print(f"Active VIP windows: {len(active_windows)}")
     print(f"Time slots checked: {total_slots_checked}")
-    print(f"API calls made: {api_calls_made}")
-    print(f"Rate limit remaining: {limiter.remaining()}/{MAX_CHECKS_PER_HOUR} per hour")
+    print("")
+
+    # Window breakdown
+    if window_stats:
+        print("Window Breakdown:")
+        for date_str in sorted(window_stats.keys()):
+            count = window_stats[date_str]
+            print(f"  • {date_str}: {count} slot{'s' if count != 1 else ''} checked")
+        print("")
+
+    # Service type breakdown
+    if service_stats:
+        print("Service Type Breakdown:")
+        for service, count in sorted(service_stats.items()):
+            print(f"  • {service}: {count} slot{'s' if count != 1 else ''}")
+        print("")
+
+    # API stats
+    api_success_rate = (api_calls_made / (api_calls_made + api_calls_failed) * 100) if (api_calls_made + api_calls_failed) > 0 else 0
+    print("API Stats:")
+    print(f"  • Calls made: {api_calls_made}")
+    print(f"  • Success: {api_calls_made}/{api_calls_made + api_calls_failed} ({api_success_rate:.1f}%)")
+    if api_calls_failed > 0:
+        print(f"  • Failed: {api_calls_failed}")
+    print(f"  • Rate limit remaining: {limiter.remaining()}/{MAX_CHECKS_PER_HOUR} per hour")
+    print(f"  • Time elapsed: {elapsed_time:.1f}s")
+    print("")
+
+    # Results
     print(f"Slots found: {len(found_this_run)}")
     print(f"Notifications sent: {len(notifications)}")
 

@@ -1,4 +1,4 @@
-name: stonewatch-vip
+name: stonewatch-vipust
 
 on:
   schedule:
@@ -46,7 +46,10 @@ jobs:
           RANDOM_STAGGER_MS: "50,200" # random delay between API calls (ms)
 
           # --- Safety Limits ---
-          MAX_CHECKS_PER_HOUR: "120"  # safety: never exceed this many API calls/hour
+          MAX_CHECKS_PER_HOUR: "2000"  # safety: never exceed this many API calls/hour (22 slots × 60 min = 1320)
+
+          # --- Testing ---
+          TEST_NOTIFICATION: "true"   # set to "true" to send test alert on startup
 
           # --- VIP Notifications (separate from base monitor) ---
           PUSHOVER_USER: ${{ secrets.PUSHOVER_USER_VIP }}

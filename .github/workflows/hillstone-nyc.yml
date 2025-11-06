@@ -55,6 +55,7 @@ jobs:
           # --- DEBUGGING TEMP ---
           DEBUG: "true"
           TEST_ALERT: "false"
+          TEST_TWITTER: "false"  # set to "true" to send a test tweet on startup
           #TEST_FIXED_KEY: "Thu Oct 09|7:30 PM|2|Dinner"
         run: python watcher.py
 

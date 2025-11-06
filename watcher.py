@@ -35,6 +35,7 @@ TWITTER_API_KEY = os.getenv("TWITTER_API_KEY")
 TWITTER_API_SECRET = os.getenv("TWITTER_API_SECRET")
 TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN")
 TWITTER_ACCESS_TOKEN_SECRET = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
+TEST_TWITTER = os.getenv("TEST_TWITTER", "false").lower() == "true"
 
 # Gist state (cross-run dedupe)
 GIST_ID       = os.getenv("GIST_ID")      # required for cross-run dedupe
@@ -310,7 +311,39 @@ def max_days_for(service_name: str) -> int:
 
 # RUN ONCE NOTIFICATION SETTINGS
 
+def send_test_tweet():
+    """Send a test tweet to verify X integration is working"""
+    if not all([TWITTER_API_KEY, TWITTER_API_SECRET, TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET]):
+        print("❌ Twitter credentials not configured. Skipping test tweet.")
+        return
+
+    print("🧪 TEST_TWITTER enabled - sending test tweet...")
+    try:
+        import tweepy
+        client = tweepy.Client(
+            consumer_key=TWITTER_API_KEY,
+            consumer_secret=TWITTER_API_SECRET,
+            access_token=TWITTER_ACCESS_TOKEN,
+            access_token_secret=TWITTER_ACCESS_TOKEN_SECRET
+        )
+
+        test_tweet = f"🧪 Test tweet from Stonewatch Hillstone NYC monitor\n\nIf you see this, X integration is working! ✅\n\nTimestamp: {datetime.now(NYC).strftime('%Y-%m-%d %H:%M:%S %Z')}"
+
+        response = client.create_tweet(text=test_tweet)
+        print(f"✅ Test tweet posted successfully!")
+        print(f"🐦 Tweet ID: {response.data['id']}")
+        print(f"📝 Content: {test_tweet}")
+    except Exception as e:
+        print(f"❌ Test tweet failed: {e}")
+        import traceback
+        traceback.print_exc()
+
 def run_once():
+    # Send test tweet if enabled
+    if TEST_TWITTER:
+        send_test_tweet()
+        print("\n" + "="*60 + "\n")
+
     svcs = enabled_services()
     today = datetime.now(tz=NYC).date()
     seen = load_seen()

@@ -30,6 +30,12 @@ PUSHOVER_SOUND  = os.getenv("PUSHOVER_SOUND")  # e.g., "magic", "siren", "bike"
 PUSHOVER_PRIORITY = os.getenv("PUSHOVER_PRIORITY", "0")  # -2..2, "0" normal
 PUSHOVER_URL_TITLE_DEFAULT = os.getenv("PUSHOVER_URL_TITLE", "Book now")
 
+# X/Twitter
+TWITTER_API_KEY = os.getenv("TWITTER_API_KEY")
+TWITTER_API_SECRET = os.getenv("TWITTER_API_SECRET")
+TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN")
+TWITTER_ACCESS_TOKEN_SECRET = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
+
 # Gist state (cross-run dedupe)
 GIST_ID       = os.getenv("GIST_ID")      # required for cross-run dedupe
 GIST_TOKEN    = os.getenv("GIST_TOKEN")   # required for cross-run dedupe
@@ -204,6 +210,31 @@ def notify(items: list[dict]):
                 requests.post(SLACK_WEBHOOK, json={"text": slack_text}, timeout=10)
             except Exception:
                 pass
+
+        # X/Twitter
+        if all([TWITTER_API_KEY, TWITTER_API_SECRET, TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET]):
+            try:
+                import tweepy
+                client = tweepy.Client(
+                    consumer_key=TWITTER_API_KEY,
+                    consumer_secret=TWITTER_API_SECRET,
+                    access_token=TWITTER_ACCESS_TOKEN,
+                    access_token_secret=TWITTER_ACCESS_TOKEN_SECRET
+                )
+
+                # Build tweet (max 280 chars)
+                tweet = f"{title}\n{text}"
+                if url:
+                    tweet += f"\n{url}"
+
+                # Truncate if too long
+                if len(tweet) > 280:
+                    tweet = tweet[:277] + "..."
+
+                client.create_tweet(text=tweet)
+                print(f"🐦 Posted to X: {tweet}")
+            except Exception as e:
+                print(f"❌ X post failed: {e}")
 
         # Always echo to logs
         print(f"{title} — {text}")

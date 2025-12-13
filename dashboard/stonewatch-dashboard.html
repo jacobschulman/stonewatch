@@ -314,6 +314,33 @@
             color: var(--accent-gold);
         }
 
+        /* Low Data Warning */
+        .low-data-warning {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            background: rgba(201, 169, 98, 0.1);
+            border: 1px solid rgba(201, 169, 98, 0.25);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .low-data-warning.visible {
+            display: flex;
+        }
+
+        .warning-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .warning-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
         /* Stats Grid */
         .stats-grid {
             display: grid;
@@ -930,6 +957,37 @@
             updateCharts();
             updateStats();
             updateFastFacts();
+            updateLowDataWarning();
+        }
+
+        function updateLowDataWarning() {
+            const warningEl = document.getElementById('low-data-warning');
+            if (!warningEl) return;
+
+            const MIN_SLOTS_FOR_INSIGHTS = 10;
+            const isFiltered = filters.timeRange !== 'all' || filters.service !== 'all' || filters.partySize !== 'all';
+
+            if (filteredData.length === 0 && isFiltered) {
+                warningEl.innerHTML = `
+                    <div class="warning-icon">📊</div>
+                    <div class="warning-text">No data for selected filters. Try expanding your time range or adjusting filters.</div>
+                `;
+                warningEl.classList.add('visible');
+            } else if (filteredData.length === 0 && !isFiltered) {
+                warningEl.innerHTML = `
+                    <div class="warning-icon">🔍</div>
+                    <div class="warning-text">No reservation data yet. We're actively monitoring—check back soon!</div>
+                `;
+                warningEl.classList.add('visible');
+            } else if (filteredData.length < MIN_SLOTS_FOR_INSIGHTS) {
+                warningEl.innerHTML = `
+                    <div class="warning-icon">✨</div>
+                    <div class="warning-text">More insights coming soon! Only ${filteredData.length} slot${filteredData.length === 1 ? '' : 's'} ${isFiltered ? 'in this range' : 'recorded so far'}—check back as we collect more data.</div>
+                `;
+                warningEl.classList.add('visible');
+            } else {
+                warningEl.classList.remove('visible');
+            }
         }
 
         function render() {
@@ -968,6 +1026,9 @@
                         <button class="toggle-btn" data-filter="partySize" data-value="4" onclick="setFilter('partySize', '4', this)">4 ppl</button>
                     </div>
                 </div>
+
+                <!-- Low Data Warning -->
+                <div class="low-data-warning" id="low-data-warning"></div>
 
                 <!-- Stats Grid -->
                 <div class="stats-grid animate-in delay-2">
@@ -1048,6 +1109,7 @@
             `;
 
             initCharts();
+            updateLowDataWarning();
         }
 
         function renderFastFacts(stats) {

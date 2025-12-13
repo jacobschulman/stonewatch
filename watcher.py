@@ -21,6 +21,10 @@ MILESTONES       = [int(x) for x in os.getenv("MILESTONES", "3,1,0").split(",") 
 DAILY_CAP_LUNCH  = int(os.getenv("DAILY_CAP_LUNCH",  "1"))
 DAILY_CAP_DINNER = int(os.getenv("DAILY_CAP_DINNER", "0"))
 
+# High visibility window - unlimited notification frequency for prime slots
+HIGH_VIS_START_TIME = os.getenv("HIGH_VIS_START_TIME", "18:00")  # 6:00 PM
+HIGH_VIS_END_TIME   = os.getenv("HIGH_VIS_END_TIME", "20:30")    # 8:30 PM
+
 # Notifications
 PUSHOVER_USER = os.getenv("PUSHOVER_USER")
 PUSHOVER_TOKEN= os.getenv("PUSHOVER_TOKEN")
@@ -241,7 +245,7 @@ def notify(items: list[dict]):
         print(f"{title} — {text}")
 
 # ---------- Logging setup ----------
-LOG_FILE = f"availability_log_{MERCHANT_ID}.csv"
+LOG_FILE = "availability_log.csv"  # Fixed name for GitHub Actions commit step
 CSV_HEADER = [
     "seen_at_iso", "slot_at_iso",
     "lead_minutes", "lead_hours",
@@ -308,6 +312,34 @@ def daily_cap_for(service_name: str) -> int:
 
 def max_days_for(service_name: str) -> int:
     return LUNCH_MAX_DAYS if service_name.lower().startswith("lunch") else DINNER_MAX_DAYS
+
+def is_high_visibility_slot(time_str: str) -> bool:
+    """
+    Check if a slot time falls within the high visibility window (e.g., 6PM-8:30PM).
+    Returns True if the slot should have unlimited notification frequency.
+
+    Args:
+        time_str: Time string in format like "6:00 PM" or "7:30 PM"
+
+    Returns:
+        True if time is within HIGH_VIS_START_TIME and HIGH_VIS_END_TIME
+    """
+    try:
+        # Parse the slot time (format: "6:00 PM")
+        slot_time = datetime.strptime(time_str.strip().upper(), "%I:%M %p").time()
+
+        # Parse the high visibility window bounds
+        start_h, start_m = parse_hm(HIGH_VIS_START_TIME)
+        end_h, end_m = parse_hm(HIGH_VIS_END_TIME)
+        start_time = datetime.strptime(f"{start_h:02d}:{start_m:02d}", "%H:%M").time()
+        end_time = datetime.strptime(f"{end_h:02d}:{end_m:02d}", "%H:%M").time()
+
+        # Check if slot time is within the window
+        return start_time <= slot_time <= end_time
+    except Exception as e:
+        # If parsing fails, default to False (normal rate limiting)
+        print(f"⚠️  Failed to parse time for high visibility check: {time_str} - {e}")
+        return False
 
 # RUN ONCE NOTIFICATION SETTINGS
 

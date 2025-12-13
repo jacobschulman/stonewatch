@@ -596,10 +596,13 @@
                 const parsed = Papa.parse(csvText, {
                     header: true,
                     skipEmptyLines: true,
-                    dynamicTyping: true
+                    dynamicTyping: (field) => {
+                        // Keep date fields as strings, parse numbers
+                        return !['seen_at_iso', 'slot_at_iso', 'service', 'weekday_slot', 'weekday_seen', 'source'].includes(field);
+                    }
                 });
 
-                allData = parsed.data.filter(row => row.slot_at_iso && row.service);
+                allData = parsed.data.filter(row => row.slot_at_iso && row.service && typeof row.slot_at_iso === 'string');
 
                 // Deduplicate by creating unique keys
                 const seen = new Set();
@@ -631,7 +634,7 @@
             if (!data.length) return {};
 
             const totalSlots = data.length;
-            const uniqueDates = new Set(data.map(d => d.slot_at_iso?.split('T')[0])).size;
+            const uniqueDates = new Set(data.map(d => String(d.slot_at_iso || '').split('T')[0]).filter(Boolean)).size;
             const avgLeadHours = data.reduce((sum, d) => sum + (d.lead_hours || 0), 0) / data.length;
 
             // Most common hour

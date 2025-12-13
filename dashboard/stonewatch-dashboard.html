@@ -48,6 +48,83 @@
             overflow-x: hidden;
         }
 
+        /* Password Screen */
+        .password-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 2rem;
+        }
+
+        .password-screen.hidden {
+            display: none;
+        }
+
+        .password-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .password-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.75rem;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .password-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+        }
+
+        .password-input {
+            width: 100%;
+            max-width: 280px;
+            padding: 1rem 1.25rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            text-align: center;
+            letter-spacing: 0.1em;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .password-input:focus {
+            border-color: var(--accent-gold);
+        }
+
+        .password-input::placeholder {
+            color: var(--text-dim);
+            letter-spacing: normal;
+        }
+
+        .password-error {
+            color: var(--accent-rose);
+            font-size: 0.8rem;
+            margin-top: 1rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .password-error.show {
+            opacity: 1;
+        }
+
         /* Ambient background */
         .ambient-bg {
             position: fixed;
@@ -62,19 +139,65 @@
             z-index: 0;
         }
 
+        .main-content {
+            display: none;
+        }
+
+        .main-content.visible {
+            display: block;
+        }
+
         .container {
             position: relative;
             z-index: 1;
             max-width: 100%;
             padding: 1rem;
-            padding-bottom: 2rem;
+            padding-bottom: 5rem;
         }
 
-        /* Header */
+        /* Sticky Header */
+        .sticky-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .sticky-header.visible {
+            transform: translateY(0);
+        }
+
+        .sticky-header .sticky-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+        }
+
+        .sticky-header .sticky-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.125rem;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Hero Header */
         .header {
             text-align: center;
             padding: 2rem 0 1.5rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .logo-container {
@@ -109,6 +232,88 @@
             text-transform: uppercase;
         }
 
+        /* Top Controls Bar */
+        .controls-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .toggle-group {
+            display: flex;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 4px;
+            gap: 2px;
+        }
+
+        .toggle-btn {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .toggle-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .toggle-btn.active {
+            background: var(--accent-gold);
+            color: var(--bg-primary);
+            font-weight: 500;
+        }
+
+        .divider {
+            width: 1px;
+            height: 24px;
+            background: var(--border-subtle);
+            margin: 0 0.25rem;
+        }
+
+        /* Time Range Pills */
+        .time-range-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .time-pill {
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .time-pill:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .time-pill.active {
+            background: var(--accent-gold-dim);
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
         /* Stats Grid */
         .stats-grid {
             display: grid;
@@ -122,24 +327,9 @@
             background-image: var(--gradient-card);
             border: 1px solid var(--border-subtle);
             border-radius: 16px;
-            padding: 1.25rem;
+            padding: 1rem;
             position: relative;
             overflow: hidden;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-        }
-
-        .stat-card:active {
-            transform: scale(0.98);
         }
 
         .stat-card.highlight {
@@ -148,16 +338,16 @@
         }
 
         .stat-label {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--text-dim);
             text-transform: uppercase;
             letter-spacing: 0.1em;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.35rem;
         }
 
         .stat-value {
             font-family: 'Playfair Display', serif;
-            font-size: 1.75rem;
+            font-size: 1.5rem;
             font-weight: 600;
             color: var(--text-primary);
             line-height: 1;
@@ -168,105 +358,58 @@
         }
 
         .stat-unit {
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             font-family: 'Inter', sans-serif;
             font-weight: 400;
             color: var(--text-secondary);
-            margin-left: 0.25rem;
+            margin-left: 0.2rem;
         }
 
-        .stat-trend {
-            display: inline-flex;
-            align-items: center;
-            font-size: 0.75rem;
-            margin-top: 0.5rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
-            font-weight: 500;
-        }
-
-        .stat-trend.up {
-            background: rgba(74, 157, 124, 0.15);
-            color: var(--accent-emerald);
-        }
-
-        .stat-trend.down {
-            background: rgba(180, 81, 109, 0.15);
-            color: var(--accent-rose);
-        }
-
-        /* Filters */
-        .filters-section {
+        /* Fast Facts */
+        .fast-facts {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
             margin-bottom: 1.5rem;
         }
 
-        .filters-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-        }
-
-        .filters-title {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        .filter-reset {
-            font-size: 0.75rem;
-            color: var(--accent-gold);
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            transition: background 0.2s;
-        }
-
-        .filter-reset:hover {
-            background: var(--accent-gold-dim);
-        }
-
-        .filter-group {
-            margin-bottom: 1rem;
-        }
-
-        .filter-label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-
-        .filter-pills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .filter-pill {
-            padding: 0.5rem 1rem;
+        .fact-card {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
-            border-radius: 100px;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            -webkit-tap-highlight-color: transparent;
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
         }
 
-        .filter-pill:hover {
-            background: var(--bg-card-hover);
+        .fact-icon {
+            font-size: 1.5rem;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .fact-content {
+            flex: 1;
+        }
+
+        .fact-title {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.25rem;
+        }
+
+        .fact-value {
+            font-size: 0.95rem;
             color: var(--text-primary);
+            line-height: 1.4;
         }
 
-        .filter-pill.active {
-            background: var(--accent-gold-dim);
-            border-color: var(--accent-gold);
+        .fact-value strong {
             color: var(--accent-gold);
+            font-weight: 600;
         }
 
         /* Charts */
@@ -284,20 +427,7 @@
             overflow: hidden;
         }
 
-        .chart-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-        }
-
         .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
             margin-bottom: 1rem;
         }
 
@@ -316,111 +446,121 @@
 
         .chart-container {
             position: relative;
-            height: 200px;
+            height: 220px;
             width: 100%;
         }
 
-        .chart-container.tall {
+        .chart-container.lead-time {
             height: 280px;
         }
 
-        /* Heatmap */
-        .heatmap-container {
+        /* GitHub-style Heatmap */
+        .github-heatmap {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
-            margin: 0 -0.5rem;
-            padding: 0 0.5rem;
+            padding-bottom: 0.5rem;
         }
 
-        .heatmap {
-            display: grid;
-            grid-template-columns: auto repeat(7, 1fr);
+        .heatmap-wrapper {
+            display: flex;
+            gap: 0.5rem;
+            min-width: fit-content;
+        }
+
+        .heatmap-labels {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 1.25rem 0;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+        }
+
+        .heatmap-grid {
+            display: flex;
+            flex-direction: column;
             gap: 3px;
-            min-width: 320px;
+        }
+
+        .heatmap-months {
+            display: flex;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            margin-bottom: 0.25rem;
+            padding-left: 2px;
+        }
+
+        .heatmap-month {
+            text-align: left;
+        }
+
+        .heatmap-row {
+            display: flex;
+            gap: 3px;
         }
 
         .heatmap-cell {
-            aspect-ratio: 1;
-            border-radius: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .heatmap-cell[data-level="1"] { background: rgba(201, 169, 98, 0.2); }
+        .heatmap-cell[data-level="2"] { background: rgba(201, 169, 98, 0.4); }
+        .heatmap-cell[data-level="3"] { background: rgba(201, 169, 98, 0.6); }
+        .heatmap-cell[data-level="4"] { background: rgba(201, 169, 98, 0.85); }
+
+        .heatmap-legend {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-end;
+            gap: 0.35rem;
+            margin-top: 0.75rem;
             font-size: 0.65rem;
             color: var(--text-dim);
-            transition: transform 0.2s;
         }
 
-        .heatmap-cell.header {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            font-weight: 500;
+        .legend-cell {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
         }
 
-        .heatmap-cell.row-header {
-            font-size: 0.65rem;
-            color: var(--text-secondary);
-            justify-content: flex-end;
-            padding-right: 0.5rem;
-        }
-
-        .heatmap-cell.data {
-            cursor: pointer;
-        }
-
-        .heatmap-cell.data:hover {
-            transform: scale(1.1);
-        }
-
-        .heat-0 { background: rgba(201, 169, 98, 0.05); }
-        .heat-1 { background: rgba(201, 169, 98, 0.15); }
-        .heat-2 { background: rgba(201, 169, 98, 0.3); }
-        .heat-3 { background: rgba(201, 169, 98, 0.45); }
-        .heat-4 { background: rgba(201, 169, 98, 0.6); }
-        .heat-5 { background: rgba(201, 169, 98, 0.8); color: var(--bg-primary); }
-
-        /* Insights */
-        .insights-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .insight-card {
-            background: var(--bg-card);
-            background-image: var(--gradient-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 16px;
-            padding: 1.25rem;
-            margin-bottom: 0.75rem;
-            position: relative;
-        }
-
-        .insight-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            background: var(--accent-gold-dim);
+        /* Sticky Footer */
+        .sticky-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-subtle);
+            padding: 0.875rem 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
-            margin-bottom: 0.75rem;
         }
 
-        .insight-title {
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--text-primary);
-            margin-bottom: 0.25rem;
-        }
-
-        .insight-text {
-            font-size: 0.8rem;
+        .twitter-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
             color: var(--text-secondary);
-            line-height: 1.5;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
         }
 
-        .insight-highlight {
+        .twitter-link:hover {
             color: var(--accent-gold);
-            font-weight: 500;
+        }
+
+        .twitter-link svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
         }
 
         /* Loading */
@@ -429,7 +569,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 60vh;
+            min-height: 50vh;
             gap: 1rem;
         }
 
@@ -449,24 +589,6 @@
         .loading-text {
             font-size: 0.875rem;
             color: var(--text-secondary);
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 2rem 0;
-            border-top: 1px solid var(--border-subtle);
-            margin-top: 2rem;
-        }
-
-        .footer-text {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-        }
-
-        .footer-text a {
-            color: var(--accent-gold);
-            text-decoration: none;
         }
 
         /* Animations */
@@ -497,10 +619,15 @@
                 max-width: 600px;
                 margin: 0 auto;
                 padding: 2rem;
+                padding-bottom: 5rem;
             }
 
             .stats-grid {
                 grid-template-columns: repeat(4, 1fr);
+            }
+
+            .fast-facts {
+                grid-template-columns: repeat(2, 1fr);
             }
 
             .header h1 {
@@ -517,39 +644,78 @@
                 height: 280px;
             }
         }
-
-        /* Pull to refresh indicator */
-        .refresh-indicator {
-            position: fixed;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%) translateY(-100%);
-            background: var(--bg-card);
-            padding: 0.5rem 1rem;
-            border-radius: 0 0 12px 12px;
-            font-size: 0.75rem;
-            color: var(--accent-gold);
-            transition: transform 0.3s ease;
-            z-index: 100;
-        }
-
-        .refresh-indicator.show {
-            transform: translateX(-50%) translateY(0);
-        }
     </style>
 </head>
 <body>
-    <div class="ambient-bg"></div>
-    <div class="refresh-indicator" id="refreshIndicator">Refreshing...</div>
+    <!-- Password Screen -->
+    <div class="password-screen" id="passwordScreen">
+        <img src="../stonewatch_logo_lo_res.png" alt="StoneWatch" class="password-logo" onerror="this.style.display='none'">
+        <h1 class="password-title">StoneWatch</h1>
+        <p class="password-subtitle">Enter password to continue</p>
+        <input type="password" class="password-input" id="passwordInput" placeholder="Password" autocomplete="off">
+        <p class="password-error" id="passwordError">Incorrect password</p>
+    </div>
 
-    <div class="container" id="app">
-        <div class="loading" id="loading">
-            <div class="loading-spinner"></div>
-            <div class="loading-text">Loading availability data...</div>
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="ambient-bg"></div>
+
+        <!-- Sticky Header -->
+        <div class="sticky-header" id="stickyHeader">
+            <img src="../stonewatch_logo_lo_res.png" alt="StoneWatch" class="sticky-logo" onerror="this.style.display='none'">
+            <span class="sticky-title">StoneWatch</span>
+        </div>
+
+        <div class="container" id="app">
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Loading availability data...</div>
+            </div>
+        </div>
+
+        <!-- Sticky Footer -->
+        <div class="sticky-footer">
+            <a href="https://x.com/stonewatchNYC" target="_blank" rel="noopener" class="twitter-link">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+                Follow @stonewatchNYC
+            </a>
         </div>
     </div>
 
     <script>
+        // Password check
+        const CORRECT_PASSWORD = 'martiniswap';
+        const passwordScreen = document.getElementById('passwordScreen');
+        const passwordInput = document.getElementById('passwordInput');
+        const passwordError = document.getElementById('passwordError');
+        const mainContent = document.getElementById('mainContent');
+
+        // Check if already authenticated
+        if (sessionStorage.getItem('sw_auth') === 'true') {
+            passwordScreen.classList.add('hidden');
+            mainContent.classList.add('visible');
+            initApp();
+        } else {
+            passwordInput.focus();
+        }
+
+        passwordInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (passwordInput.value === CORRECT_PASSWORD) {
+                    sessionStorage.setItem('sw_auth', 'true');
+                    passwordScreen.classList.add('hidden');
+                    mainContent.classList.add('visible');
+                    initApp();
+                } else {
+                    passwordError.classList.add('show');
+                    passwordInput.value = '';
+                    setTimeout(() => passwordError.classList.remove('show'), 2000);
+                }
+            }
+        });
+
         // Global state
         let allData = [];
         let filteredData = [];
@@ -557,7 +723,7 @@
         let filters = {
             service: 'all',
             partySize: 'all',
-            weekday: 'all'
+            timeRange: 'all'
         };
 
         // Chart.js defaults
@@ -565,10 +731,8 @@
         Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.06)';
         Chart.defaults.font.family = "'Inter', sans-serif";
 
-        // Parse CSV and initialize
-        async function init() {
+        async function initApp() {
             try {
-                // Try multiple paths for GitHub Pages compatibility
                 const paths = [
                     '../availability_log.csv',
                     './availability_log.csv',
@@ -597,14 +761,13 @@
                     header: true,
                     skipEmptyLines: true,
                     dynamicTyping: (field) => {
-                        // Keep date fields as strings, parse numbers
                         return !['seen_at_iso', 'slot_at_iso', 'service', 'weekday_slot', 'weekday_seen', 'source'].includes(field);
                     }
                 });
 
                 allData = parsed.data.filter(row => row.slot_at_iso && row.service && typeof row.slot_at_iso === 'string');
 
-                // Deduplicate by creating unique keys
+                // Deduplicate
                 const seen = new Set();
                 allData = allData.filter(row => {
                     const key = `${row.slot_at_iso}-${row.party_size}-${row.service}`;
@@ -615,21 +778,35 @@
 
                 filteredData = [...allData];
                 render();
+                setupStickyHeader();
             } catch (error) {
                 console.error('Error loading data:', error);
                 document.getElementById('loading').innerHTML = `
                     <div style="text-align: center; color: var(--text-secondary);">
                         <div style="font-size: 2rem; margin-bottom: 1rem;">⚠️</div>
                         <div>Unable to load data</div>
-                        <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-dim);">
-                            ${error.message}
-                        </div>
+                        <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-dim);">${error.message}</div>
                     </div>
                 `;
             }
         }
 
-        // Calculate stats
+        function setupStickyHeader() {
+            const header = document.querySelector('.header');
+            const stickyHeader = document.getElementById('stickyHeader');
+
+            if (!header) return;
+
+            const observer = new IntersectionObserver(
+                ([entry]) => {
+                    stickyHeader.classList.toggle('visible', !entry.isIntersecting);
+                },
+                { threshold: 0, rootMargin: '-50px 0px 0px 0px' }
+            );
+
+            observer.observe(header);
+        }
+
         function calculateStats(data) {
             if (!data.length) return {};
 
@@ -637,7 +814,7 @@
             const uniqueDates = new Set(data.map(d => String(d.slot_at_iso || '').split('T')[0]).filter(Boolean)).size;
             const avgLeadHours = data.reduce((sum, d) => sum + (d.lead_hours || 0), 0) / data.length;
 
-            // Most common hour
+            // Hour distribution
             const hourCounts = {};
             data.forEach(d => {
                 const hour = d.hour_slot;
@@ -645,11 +822,11 @@
             });
             const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
 
-            // Party size distribution
+            // Party size
             const party2 = data.filter(d => d.party_size === 2).length;
             const party4 = data.filter(d => d.party_size === 4).length;
 
-            // Service distribution
+            // Service
             const lunch = data.filter(d => d.service === 'Lunch').length;
             const dinner = data.filter(d => d.service === 'Dinner').length;
 
@@ -659,51 +836,67 @@
                 const wd = d.weekday_slot;
                 weekdayCounts[wd] = (weekdayCounts[wd] || 0) + 1;
             });
-            const bestDay = Object.entries(weekdayCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+
+            // Lead time distribution by hour
+            const leadHourCounts = {};
+            data.forEach(d => {
+                const hour = Math.floor(d.lead_hours || 0);
+                const bucket = Math.min(hour, 72); // Cap at 72 hours
+                leadHourCounts[bucket] = (leadHourCounts[bucket] || 0) + 1;
+            });
 
             return {
                 totalSlots,
                 uniqueDates,
                 avgLeadHours: avgLeadHours.toFixed(1),
                 peakHour: formatHour(parseInt(peakHour)),
+                peakHourRaw: parseInt(peakHour),
+                party2,
+                party4,
                 party2Pct: ((party2 / totalSlots) * 100).toFixed(0),
                 party4Pct: ((party4 / totalSlots) * 100).toFixed(0),
+                lunch,
+                dinner,
                 lunchPct: ((lunch / totalSlots) * 100).toFixed(0),
                 dinnerPct: ((dinner / totalSlots) * 100).toFixed(0),
-                bestDay,
                 hourCounts,
-                weekdayCounts
+                weekdayCounts,
+                leadHourCounts
             };
         }
 
         function formatHour(hour) {
-            if (hour === 0) return '12am';
+            if (hour === 0 || hour === 24) return '12am';
             if (hour === 12) return '12pm';
             if (hour < 12) return `${hour}am`;
             return `${hour - 12}pm`;
         }
 
-        // Apply filters
         function applyFilters() {
+            const now = new Date();
+
             filteredData = allData.filter(row => {
+                // Service filter
                 if (filters.service !== 'all' && row.service !== filters.service) return false;
+
+                // Party size filter
                 if (filters.partySize !== 'all' && row.party_size !== parseInt(filters.partySize)) return false;
-                if (filters.weekday !== 'all' && row.weekday_slot !== filters.weekday) return false;
+
+                // Time range filter
+                if (filters.timeRange !== 'all') {
+                    const seenDate = new Date(row.seen_at_iso);
+                    const daysDiff = (now - seenDate) / (1000 * 60 * 60 * 24);
+                    if (daysDiff > parseInt(filters.timeRange)) return false;
+                }
+
                 return true;
             });
+
             updateCharts();
             updateStats();
+            updateFastFacts();
         }
 
-        function resetFilters() {
-            filters = { service: 'all', partySize: 'all', weekday: 'all' };
-            document.querySelectorAll('.filter-pill').forEach(pill => {
-                pill.classList.toggle('active', pill.dataset.value === 'all');
-            });
-            applyFilters();
-        }
-
-        // Render main UI
         function render() {
             const stats = calculateStats(allData);
             const app = document.getElementById('app');
@@ -717,9 +910,34 @@
                     <p class="subtitle">Reservation Intelligence</p>
                 </header>
 
-                <div class="stats-grid animate-in delay-1">
+                <!-- Time Range -->
+                <div class="time-range-pills animate-in delay-1">
+                    <button class="time-pill" data-range="3" onclick="setTimeRange('3', this)">3 Days</button>
+                    <button class="time-pill" data-range="7" onclick="setTimeRange('7', this)">7 Days</button>
+                    <button class="time-pill" data-range="14" onclick="setTimeRange('14', this)">14 Days</button>
+                    <button class="time-pill" data-range="30" onclick="setTimeRange('30', this)">30 Days</button>
+                    <button class="time-pill active" data-range="all" onclick="setTimeRange('all', this)">All Time</button>
+                </div>
+
+                <!-- Controls Bar -->
+                <div class="controls-bar animate-in delay-1">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-filter="service" data-value="all" onclick="setFilter('service', 'all', this)">All</button>
+                        <button class="toggle-btn" data-filter="service" data-value="Lunch" onclick="setFilter('service', 'Lunch', this)">Lunch</button>
+                        <button class="toggle-btn" data-filter="service" data-value="Dinner" onclick="setFilter('service', 'Dinner', this)">Dinner</button>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-filter="partySize" data-value="all" onclick="setFilter('partySize', 'all', this)">All</button>
+                        <button class="toggle-btn" data-filter="partySize" data-value="2" onclick="setFilter('partySize', '2', this)">2 ppl</button>
+                        <button class="toggle-btn" data-filter="partySize" data-value="4" onclick="setFilter('partySize', '4', this)">4 ppl</button>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid animate-in delay-2">
                     <div class="stat-card highlight">
-                        <div class="stat-label">Total Slots</div>
+                        <div class="stat-label">Slots Found</div>
                         <div class="stat-value" id="stat-total">${stats.totalSlots.toLocaleString()}</div>
                     </div>
                     <div class="stat-card">
@@ -727,7 +945,7 @@
                         <div class="stat-value" id="stat-days">${stats.uniqueDates}</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Avg Lead Time</div>
+                        <div class="stat-label">Avg Lead</div>
                         <div class="stat-value" id="stat-lead">${stats.avgLeadHours}<span class="stat-unit">hrs</span></div>
                     </div>
                     <div class="stat-card">
@@ -736,52 +954,17 @@
                     </div>
                 </div>
 
-                <div class="filters-section animate-in delay-2">
-                    <div class="filters-header">
-                        <span class="filters-title">Filters</span>
-                        <button class="filter-reset" onclick="resetFilters()">Reset All</button>
-                    </div>
-
-                    <div class="filter-group">
-                        <span class="filter-label">Service</span>
-                        <div class="filter-pills">
-                            <button class="filter-pill active" data-filter="service" data-value="all" onclick="setFilter('service', 'all', this)">All</button>
-                            <button class="filter-pill" data-filter="service" data-value="Lunch" onclick="setFilter('service', 'Lunch', this)">Lunch</button>
-                            <button class="filter-pill" data-filter="service" data-value="Dinner" onclick="setFilter('service', 'Dinner', this)">Dinner</button>
-                        </div>
-                    </div>
-
-                    <div class="filter-group">
-                        <span class="filter-label">Party Size</span>
-                        <div class="filter-pills">
-                            <button class="filter-pill active" data-filter="partySize" data-value="all" onclick="setFilter('partySize', 'all', this)">All</button>
-                            <button class="filter-pill" data-filter="partySize" data-value="2" onclick="setFilter('partySize', '2', this)">2 Guests</button>
-                            <button class="filter-pill" data-filter="partySize" data-value="4" onclick="setFilter('partySize', '4', this)">4 Guests</button>
-                        </div>
-                    </div>
-
-                    <div class="filter-group">
-                        <span class="filter-label">Day of Week</span>
-                        <div class="filter-pills">
-                            <button class="filter-pill active" data-filter="weekday" data-value="all" onclick="setFilter('weekday', 'all', this)">All</button>
-                            <button class="filter-pill" data-filter="weekday" data-value="Mon" onclick="setFilter('weekday', 'Mon', this)">Mon</button>
-                            <button class="filter-pill" data-filter="weekday" data-value="Tue" onclick="setFilter('weekday', 'Tue', this)">Tue</button>
-                            <button class="filter-pill" data-filter="weekday" data-value="Wed" onclick="setFilter('weekday', 'Wed', this)">Wed</button>
-                            <button class="filter-pill" data-filter="weekday" data-value="Thu" onclick="setFilter('weekday', 'Thu', this)">Thu</button>
-                            <button class="filter-pill" data-filter="weekday" data-value="Fri" onclick="setFilter('weekday', 'Fri', this)">Fri</button>
-                            <button class="filter-pill" data-filter="weekday" data-value="Sat" onclick="setFilter('weekday', 'Sat', this)">Sat</button>
-                            <button class="filter-pill" data-filter="weekday" data-value="Sun" onclick="setFilter('weekday', 'Sun', this)">Sun</button>
-                        </div>
-                    </div>
+                <!-- Fast Facts -->
+                <div class="fast-facts animate-in delay-2" id="fast-facts">
+                    ${renderFastFacts(stats)}
                 </div>
 
+                <!-- Availability by Hour -->
                 <div class="chart-section animate-in delay-3">
                     <div class="chart-card">
                         <div class="chart-header">
-                            <div>
-                                <div class="chart-title">Availability by Hour</div>
-                                <div class="chart-subtitle">When slots become available</div>
-                            </div>
+                            <div class="chart-title">Slots by Hour</div>
+                            <div class="chart-subtitle">Reservation time distribution</div>
                         </div>
                         <div class="chart-container">
                             <canvas id="hourChart"></canvas>
@@ -789,13 +972,12 @@
                     </div>
                 </div>
 
+                <!-- Day of Week -->
                 <div class="chart-section animate-in delay-3">
                     <div class="chart-card">
                         <div class="chart-header">
-                            <div>
-                                <div class="chart-title">Day of Week Pattern</div>
-                                <div class="chart-subtitle">Availability distribution across days</div>
-                            </div>
+                            <div class="chart-title">Day of Week</div>
+                            <div class="chart-subtitle">Which days have the most availability</div>
                         </div>
                         <div class="chart-container">
                             <canvas id="weekdayChart"></canvas>
@@ -803,75 +985,140 @@
                     </div>
                 </div>
 
-                <div class="chart-section animate-in delay-4">
+                <!-- GitHub-style Heatmap -->
+                <div class="chart-section animate-in delay-3">
                     <div class="chart-card">
                         <div class="chart-header">
-                            <div>
-                                <div class="chart-title">Availability Heatmap</div>
-                                <div class="chart-subtitle">Hour vs Day intensity</div>
-                            </div>
+                            <div class="chart-title">Activity Heatmap</div>
+                            <div class="chart-subtitle">Slots spotted over time</div>
                         </div>
-                        <div class="heatmap-container">
-                            <div class="heatmap" id="heatmap"></div>
+                        <div class="github-heatmap">
+                            <div id="heatmap"></div>
                         </div>
                     </div>
                 </div>
 
+                <!-- Lead Time Distribution -->
                 <div class="chart-section animate-in delay-4">
                     <div class="chart-card">
                         <div class="chart-header">
-                            <div>
-                                <div class="chart-title">Lead Time Distribution</div>
-                                <div class="chart-subtitle">How far in advance slots appear</div>
-                            </div>
+                            <div class="chart-title">Lead Time Distribution</div>
+                            <div class="chart-subtitle">How far ahead slots appear (hours)</div>
                         </div>
-                        <div class="chart-container tall">
+                        <div class="chart-container lead-time">
                             <canvas id="leadTimeChart"></canvas>
                         </div>
                     </div>
                 </div>
-
-                <div class="insights-section animate-in delay-4">
-                    <div class="insight-card" id="insight-best-time">
-                        <div class="insight-icon">🎯</div>
-                        <div class="insight-title">Best Time to Check</div>
-                        <div class="insight-text" id="insight-best-time-text">Loading...</div>
-                    </div>
-                    <div class="insight-card" id="insight-party-size">
-                        <div class="insight-icon">👥</div>
-                        <div class="insight-title">Party Size Insight</div>
-                        <div class="insight-text" id="insight-party-text">Loading...</div>
-                    </div>
-                    <div class="insight-card" id="insight-day">
-                        <div class="insight-icon">📅</div>
-                        <div class="insight-title">Day Strategy</div>
-                        <div class="insight-text" id="insight-day-text">Loading...</div>
-                    </div>
-                </div>
-
-                <footer class="footer">
-                    <p class="footer-text">StoneWatch Analytics • Data updates automatically</p>
-                </footer>
             `;
 
             initCharts();
-            updateInsights();
         }
 
-        // Filter handling
-        function setFilter(filterName, value, element) {
-            filters[filterName] = value;
+        function renderFastFacts(stats) {
+            if (!stats.totalSlots) return '';
 
-            // Update pill states
-            document.querySelectorAll(`.filter-pill[data-filter="${filterName}"]`).forEach(pill => {
-                pill.classList.remove('active');
-            });
+            // Calculate interesting facts
+            const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const sortedDays = weekdays
+                .map(d => ({ day: d, count: stats.weekdayCounts?.[d] || 0 }))
+                .sort((a, b) => b.count - a.count);
+
+            const bestDay = sortedDays[0]?.day || 'Thu';
+            const worstDay = sortedDays[sortedDays.length - 1]?.day || 'Sun';
+
+            // Weekend vs weekday
+            const weekendCount = (stats.weekdayCounts?.['Sat'] || 0) + (stats.weekdayCounts?.['Sun'] || 0);
+            const weekdayCount = stats.totalSlots - weekendCount;
+            const weekdayPct = ((weekdayCount / stats.totalSlots) * 100).toFixed(0);
+
+            // Prime time analysis (6-9pm)
+            const primeTimeSlots = [18, 19, 20, 21].reduce((sum, h) => sum + (stats.hourCounts?.[h] || 0), 0);
+            const primeTimePct = ((primeTimeSlots / stats.totalSlots) * 100).toFixed(0);
+
+            // Same day slots (lead time < 12 hours)
+            const sameDaySlots = Object.entries(stats.leadHourCounts || {})
+                .filter(([h]) => parseInt(h) < 12)
+                .reduce((sum, [, count]) => sum + count, 0);
+            const sameDayPct = ((sameDaySlots / stats.totalSlots) * 100).toFixed(0);
+
+            // Lunch vs dinner advantage
+            const lunchAdvantage = stats.lunch > stats.dinner;
+            const serviceDiff = Math.abs(stats.lunch - stats.dinner);
+            const serviceRatio = lunchAdvantage
+                ? (stats.lunch / (stats.dinner || 1)).toFixed(1)
+                : (stats.dinner / (stats.lunch || 1)).toFixed(1);
+
+            return `
+                <div class="fact-card">
+                    <div class="fact-icon">🎯</div>
+                    <div class="fact-content">
+                        <div class="fact-title">Best Time to Check</div>
+                        <div class="fact-value"><strong>${sameDayPct}%</strong> of slots appear within 12 hours. Check frequently for same-day cancellations.</div>
+                    </div>
+                </div>
+                <div class="fact-card">
+                    <div class="fact-icon">📅</div>
+                    <div class="fact-content">
+                        <div class="fact-title">Day Strategy</div>
+                        <div class="fact-value"><strong>${bestDay}</strong> has the most slots. <strong>${weekdayPct}%</strong> of availability is on weekdays vs weekends.</div>
+                    </div>
+                </div>
+                <div class="fact-card">
+                    <div class="fact-icon">🍽️</div>
+                    <div class="fact-content">
+                        <div class="fact-title">Service Insight</div>
+                        <div class="fact-value"><strong>${lunchAdvantage ? 'Lunch' : 'Dinner'}</strong> has ${serviceRatio}x more availability. ${lunchAdvantage ? 'Consider a late lunch for easier booking.' : 'Dinner slots are surprisingly accessible.'}</div>
+                    </div>
+                </div>
+                <div class="fact-card">
+                    <div class="fact-icon">⏰</div>
+                    <div class="fact-content">
+                        <div class="fact-title">Prime Time</div>
+                        <div class="fact-value">Only <strong>${primeTimePct}%</strong> of slots are 6-9pm prime time. Off-peak hours give you a major advantage.</div>
+                    </div>
+                </div>
+                <div class="fact-card">
+                    <div class="fact-icon">👥</div>
+                    <div class="fact-content">
+                        <div class="fact-title">Party Size Edge</div>
+                        <div class="fact-value">Tables for <strong>${stats.party2 > stats.party4 ? '2' : '4'}</strong> are ${stats.party2 > stats.party4 ? (stats.party2 / (stats.party4 || 1)).toFixed(1) : (stats.party4 / (stats.party2 || 1)).toFixed(1)}x more common. ${stats.party2 > stats.party4 ? 'Intimate dinners are easier to book.' : 'Group reservations have good availability.'}</div>
+                    </div>
+                </div>
+                <div class="fact-card">
+                    <div class="fact-icon">💡</div>
+                    <div class="fact-content">
+                        <div class="fact-title">Pro Tip</div>
+                        <div class="fact-value">Average lead time is <strong>${stats.avgLeadHours}h</strong>. Most slots appear ${parseFloat(stats.avgLeadHours) < 24 ? 'same-day' : '1-2 days out'}—set your alerts accordingly.</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateFastFacts() {
+            const stats = calculateStats(filteredData);
+            const factsEl = document.getElementById('fast-facts');
+            if (factsEl) {
+                factsEl.innerHTML = renderFastFacts(stats);
+            }
+        }
+
+        function setTimeRange(range, element) {
+            filters.timeRange = range;
+            document.querySelectorAll('.time-pill').forEach(pill => pill.classList.remove('active'));
             element.classList.add('active');
-
             applyFilters();
         }
 
-        // Initialize charts
+        function setFilter(filterName, value, element) {
+            filters[filterName] = value;
+            document.querySelectorAll(`.toggle-btn[data-filter="${filterName}"]`).forEach(btn => {
+                btn.classList.remove('active');
+            });
+            element.classList.add('active');
+            applyFilters();
+        }
+
         function initCharts() {
             const stats = calculateStats(filteredData);
 
@@ -908,18 +1155,15 @@
                             borderColor: 'rgba(255,255,255,0.1)',
                             borderWidth: 1,
                             cornerRadius: 8,
-                            padding: 12
+                            padding: 12,
+                            callbacks: {
+                                label: ctx => `${ctx.raw} slots`
+                            }
                         }
                     },
                     scales: {
-                        x: {
-                            grid: { display: false },
-                            ticks: { font: { size: 10 } }
-                        },
-                        y: {
-                            grid: { color: 'rgba(255,255,255,0.03)' },
-                            ticks: { font: { size: 10 } }
-                        }
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                        y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { font: { size: 10 } } }
                     }
                 }
             });
@@ -934,11 +1178,11 @@
                     labels: weekdays,
                     datasets: [{
                         data: weekdayData,
-                        backgroundColor: weekdayData.map((v, i) =>
-                            i >= 4 ? 'rgba(180, 81, 109, 0.6)' : 'rgba(74, 157, 124, 0.6)'
+                        backgroundColor: weekdayData.map((_, i) =>
+                            i >= 5 ? 'rgba(180, 81, 109, 0.6)' : 'rgba(74, 157, 124, 0.6)'
                         ),
-                        borderColor: weekdayData.map((v, i) =>
-                            i >= 4 ? 'rgba(180, 81, 109, 1)' : 'rgba(74, 157, 124, 1)'
+                        borderColor: weekdayData.map((_, i) =>
+                            i >= 5 ? 'rgba(180, 81, 109, 1)' : 'rgba(74, 157, 124, 1)'
                         ),
                         borderWidth: 1,
                         borderRadius: 4,
@@ -946,65 +1190,6 @@
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#1a1a24',
-                            titleColor: '#f5f5f7',
-                            bodyColor: '#a0a0a8',
-                            borderColor: 'rgba(255,255,255,0.1)',
-                            borderWidth: 1,
-                            cornerRadius: 8,
-                            padding: 12
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: { display: false },
-                            ticks: { font: { size: 11 } }
-                        },
-                        y: {
-                            grid: { color: 'rgba(255,255,255,0.03)' },
-                            ticks: { font: { size: 10 } }
-                        }
-                    }
-                }
-            });
-
-            // Lead time histogram
-            const leadBuckets = [
-                { label: '0-4h', min: 0, max: 4 },
-                { label: '4-8h', min: 4, max: 8 },
-                { label: '8-12h', min: 8, max: 12 },
-                { label: '12-24h', min: 12, max: 24 },
-                { label: '24-48h', min: 24, max: 48 },
-                { label: '48h+', min: 48, max: 9999 }
-            ];
-
-            const leadData = leadBuckets.map(bucket =>
-                filteredData.filter(d => d.lead_hours >= bucket.min && d.lead_hours < bucket.max).length
-            );
-
-            charts.leadTime = new Chart(document.getElementById('leadTimeChart'), {
-                type: 'bar',
-                data: {
-                    labels: leadBuckets.map(b => b.label),
-                    datasets: [{
-                        data: leadData,
-                        backgroundColor: leadBuckets.map((_, i) => {
-                            const opacity = 0.3 + (i * 0.12);
-                            return `rgba(201, 169, 98, ${opacity})`;
-                        }),
-                        borderColor: 'rgba(201, 169, 98, 1)',
-                        borderWidth: 1,
-                        borderRadius: 4,
-                        borderSkipped: false
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
@@ -1023,58 +1208,198 @@
                         }
                     },
                     scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                        y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+
+            // Lead time chart - hourly distribution
+            const leadLabels = [];
+            const leadData = [];
+            const maxHour = 48; // Show up to 48 hours
+
+            for (let h = 0; h <= maxHour; h++) {
+                leadLabels.push(h);
+                leadData.push(stats.leadHourCounts?.[h] || 0);
+            }
+
+            // Convert to percentages
+            const totalForPct = leadData.reduce((a, b) => a + b, 0);
+            const leadPctData = leadData.map(v => totalForPct > 0 ? (v / totalForPct) * 100 : 0);
+
+            charts.leadTime = new Chart(document.getElementById('leadTimeChart'), {
+                type: 'bar',
+                data: {
+                    labels: leadLabels,
+                    datasets: [{
+                        data: leadPctData,
+                        backgroundColor: leadLabels.map(h => {
+                            if (h < 6) return 'rgba(180, 81, 109, 0.7)';
+                            if (h < 12) return 'rgba(201, 169, 98, 0.7)';
+                            if (h < 24) return 'rgba(74, 157, 124, 0.6)';
+                            return 'rgba(74, 157, 124, 0.4)';
+                        }),
+                        borderRadius: 2,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1a1a24',
+                            titleColor: '#f5f5f7',
+                            bodyColor: '#a0a0a8',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            padding: 12,
+                            callbacks: {
+                                title: ctx => `${ctx[0].label}h ahead`,
+                                label: ctx => `${ctx.raw.toFixed(1)}% of slots`
+                            }
+                        }
+                    },
+                    scales: {
                         x: {
-                            grid: { color: 'rgba(255,255,255,0.03)' },
-                            ticks: { font: { size: 10 } }
+                            grid: { display: false },
+                            ticks: {
+                                font: { size: 9 },
+                                maxRotation: 0,
+                                callback: (val, idx) => idx % 6 === 0 ? val : ''
+                            },
+                            title: {
+                                display: true,
+                                text: 'Hours ahead',
+                                color: '#6b6b75',
+                                font: { size: 10 }
+                            }
                         },
                         y: {
-                            grid: { display: false },
-                            ticks: { font: { size: 11 } }
+                            grid: { color: 'rgba(255,255,255,0.03)' },
+                            ticks: {
+                                font: { size: 10 },
+                                callback: val => val + '%'
+                            },
+                            title: {
+                                display: true,
+                                text: '% of slots',
+                                color: '#6b6b75',
+                                font: { size: 10 }
+                            }
                         }
                     }
                 }
             });
 
-            // Heatmap
-            renderHeatmap();
+            // GitHub-style heatmap
+            renderGitHubHeatmap();
         }
 
-        function renderHeatmap() {
+        function renderGitHubHeatmap() {
             const heatmapEl = document.getElementById('heatmap');
-            const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-            const hours = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+            if (!heatmapEl) return;
 
-            // Calculate heatmap data
-            const heatData = {};
-            let maxVal = 0;
+            // Get date range from data
+            const dates = filteredData.map(d => new Date(d.seen_at_iso));
+            if (dates.length === 0) {
+                heatmapEl.innerHTML = '<div style="color: var(--text-dim); font-size: 0.8rem; padding: 1rem;">No data for selected filters</div>';
+                return;
+            }
 
-            hours.forEach(h => {
-                heatData[h] = {};
-                weekdays.forEach(d => {
-                    const count = filteredData.filter(row =>
-                        row.hour_slot === h && row.weekday_slot === d
-                    ).length;
-                    heatData[h][d] = count;
-                    maxVal = Math.max(maxVal, count);
+            const minDate = new Date(Math.min(...dates));
+            const maxDate = new Date(Math.max(...dates));
+
+            // Count slots by date
+            const dateCounts = {};
+            filteredData.forEach(d => {
+                const dateStr = d.seen_at_iso.split('T')[0];
+                dateCounts[dateStr] = (dateCounts[dateStr] || 0) + 1;
+            });
+
+            const maxCount = Math.max(...Object.values(dateCounts), 1);
+
+            // Build calendar grid (GitHub style: columns are weeks, rows are days)
+            // Start from the beginning of the week containing minDate
+            const startDate = new Date(minDate);
+            startDate.setDate(startDate.getDate() - startDate.getDay()); // Go to Sunday
+
+            const endDate = new Date(maxDate);
+            endDate.setDate(endDate.getDate() + (6 - endDate.getDay())); // Go to Saturday
+
+            // Group by weeks
+            const weeks = [];
+            let currentDate = new Date(startDate);
+
+            while (currentDate <= endDate) {
+                const week = [];
+                for (let day = 0; day < 7; day++) {
+                    const dateStr = currentDate.toISOString().split('T')[0];
+                    const count = dateCounts[dateStr] || 0;
+                    let level = 0;
+                    if (count > 0) {
+                        level = Math.min(4, Math.ceil((count / maxCount) * 4));
+                    }
+                    week.push({
+                        date: dateStr,
+                        count,
+                        level,
+                        month: currentDate.getMonth(),
+                        day: currentDate.getDate()
+                    });
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+                weeks.push(week);
+            }
+
+            // Build month labels
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            let monthLabels = '';
+            let lastMonth = -1;
+            weeks.forEach((week, i) => {
+                const firstDay = week.find(d => d.day <= 7);
+                if (firstDay && firstDay.month !== lastMonth && firstDay.day <= 7) {
+                    monthLabels += `<span class="heatmap-month" style="width: ${15 * Math.min(4, weeks.length - i)}px">${months[firstDay.month]}</span>`;
+                    lastMonth = firstDay.month;
+                }
+            });
+
+            // Build grid
+            const dayLabels = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
+            let gridHtml = '';
+
+            for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+                gridHtml += '<div class="heatmap-row">';
+                weeks.forEach(week => {
+                    const cell = week[dayOfWeek];
+                    gridHtml += `<div class="heatmap-cell" data-level="${cell.level}" title="${cell.date}: ${cell.count} slots"></div>`;
                 });
-            });
+                gridHtml += '</div>';
+            }
 
-            // Render
-            let html = '<div class="heatmap-cell"></div>';
-            weekdays.forEach(d => {
-                html += `<div class="heatmap-cell header">${d}</div>`;
-            });
-
-            hours.forEach(h => {
-                html += `<div class="heatmap-cell row-header">${formatHour(h)}</div>`;
-                weekdays.forEach(d => {
-                    const val = heatData[h][d];
-                    const intensity = maxVal > 0 ? Math.ceil((val / maxVal) * 5) : 0;
-                    html += `<div class="heatmap-cell data heat-${intensity}" title="${d} ${formatHour(h)}: ${val} slots"></div>`;
-                });
-            });
-
-            heatmapEl.innerHTML = html;
+            heatmapEl.innerHTML = `
+                <div class="heatmap-wrapper">
+                    <div class="heatmap-labels">
+                        ${dayLabels.map(l => `<span>${l}</span>`).join('')}
+                    </div>
+                    <div class="heatmap-grid">
+                        <div class="heatmap-months">${monthLabels}</div>
+                        ${gridHtml}
+                    </div>
+                </div>
+                <div class="heatmap-legend">
+                    <span>Less</span>
+                    <div class="legend-cell heatmap-cell" data-level="0"></div>
+                    <div class="legend-cell heatmap-cell" data-level="1"></div>
+                    <div class="legend-cell heatmap-cell" data-level="2"></div>
+                    <div class="legend-cell heatmap-cell" data-level="3"></div>
+                    <div class="legend-cell heatmap-cell" data-level="4"></div>
+                    <span>More</span>
+                </div>
+            `;
         }
 
         function updateCharts() {
@@ -1095,67 +1420,27 @@
             charts.weekday.update('none');
 
             // Update lead time chart
-            const leadBuckets = [
-                { min: 0, max: 4 },
-                { min: 4, max: 8 },
-                { min: 8, max: 12 },
-                { min: 12, max: 24 },
-                { min: 24, max: 48 },
-                { min: 48, max: 9999 }
-            ];
-            const leadData = leadBuckets.map(bucket =>
-                filteredData.filter(d => d.lead_hours >= bucket.min && d.lead_hours < bucket.max).length
-            );
-            charts.leadTime.data.datasets[0].data = leadData;
+            const leadData = [];
+            const maxHour = 48;
+            for (let h = 0; h <= maxHour; h++) {
+                leadData.push(stats.leadHourCounts?.[h] || 0);
+            }
+            const totalForPct = leadData.reduce((a, b) => a + b, 0);
+            const leadPctData = leadData.map(v => totalForPct > 0 ? (v / totalForPct) * 100 : 0);
+            charts.leadTime.data.datasets[0].data = leadPctData;
             charts.leadTime.update('none');
 
             // Update heatmap
-            renderHeatmap();
-
-            // Update insights
-            updateInsights();
+            renderGitHubHeatmap();
         }
 
         function updateStats() {
             const stats = calculateStats(filteredData);
-
             document.getElementById('stat-total').textContent = stats.totalSlots?.toLocaleString() || '0';
             document.getElementById('stat-days').textContent = stats.uniqueDates || '0';
             document.getElementById('stat-lead').innerHTML = `${stats.avgLeadHours || '0'}<span class="stat-unit">hrs</span>`;
             document.getElementById('stat-peak').textContent = stats.peakHour || '-';
         }
-
-        function updateInsights() {
-            const stats = calculateStats(filteredData);
-
-            // Best time insight
-            const peakHour = parseInt(Object.entries(stats.hourCounts || {}).sort((a, b) => b[1] - a[1])[0]?.[0]) || 12;
-            document.getElementById('insight-best-time-text').innerHTML = `
-                Most slots appear around <span class="insight-highlight">${formatHour(peakHour)}</span>.
-                Set your alerts for ${formatHour(peakHour - 1)} to ${formatHour(peakHour + 1)} for the best chances.
-            `;
-
-            // Party size insight
-            const party2 = filteredData.filter(d => d.party_size === 2).length;
-            const party4 = filteredData.filter(d => d.party_size === 4).length;
-            const betterSize = party2 > party4 ? '2-person' : '4-person';
-            const ratio = party2 > party4 ? (party2 / (party4 || 1)).toFixed(1) : (party4 / (party2 || 1)).toFixed(1);
-            document.getElementById('insight-party-text').innerHTML = `
-                <span class="insight-highlight">${betterSize}</span> reservations are ${ratio}x more common.
-                ${party2 > party4 ? 'Smaller parties have better odds.' : 'Larger parties might have an advantage here.'}
-            `;
-
-            // Day insight
-            const bestDay = Object.entries(stats.weekdayCounts || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Thu';
-            const worstDay = Object.entries(stats.weekdayCounts || {}).sort((a, b) => a[1] - b[1])[0]?.[0] || 'Sun';
-            document.getElementById('insight-day-text').innerHTML = `
-                <span class="insight-highlight">${bestDay}</span> has the most availability.
-                Avoid ${worstDay} if you want more options. Weekend slots are typically more competitive.
-            `;
-        }
-
-        // Initialize
-        init();
     </script>
 </body>
 </html>

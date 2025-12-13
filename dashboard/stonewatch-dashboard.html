@@ -454,79 +454,62 @@
             height: 280px;
         }
 
-        /* Day x Hour Heatmap */
-        .day-hour-heatmap {
-            padding: 0.5rem 0;
+        /* GitHub-style Heatmap */
+        .github-heatmap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 0.5rem;
         }
 
-        .heatmap-container {
+        .heatmap-wrapper {
             display: flex;
             gap: 0.5rem;
+            min-width: fit-content;
         }
 
-        .heatmap-hour-labels {
+        .heatmap-labels {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            justify-content: space-between;
+            padding: 1.25rem 0;
             font-size: 0.65rem;
             color: var(--text-dim);
-            text-align: right;
-            padding-top: 1.5rem;
         }
 
-        .heatmap-hour-label {
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding-right: 0.5rem;
-        }
-
-        .heatmap-main {
-            flex: 1;
+        .heatmap-grid {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 3px;
         }
 
-        .heatmap-day-labels {
+        .heatmap-months {
             display: flex;
-            justify-content: space-around;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--text-dim);
-            padding-bottom: 0.25rem;
+            margin-bottom: 0.25rem;
+            padding-left: 2px;
         }
 
-        .heatmap-day-label {
-            flex: 1;
-            text-align: center;
+        .heatmap-month {
+            text-align: left;
         }
 
         .heatmap-row {
             display: flex;
-            gap: 4px;
+            gap: 3px;
         }
 
         .heatmap-cell {
-            flex: 1;
-            height: 24px;
-            border-radius: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
             background: rgba(255, 255, 255, 0.03);
-            cursor: pointer;
-            transition: transform 0.15s ease;
-            position: relative;
         }
 
-        .heatmap-cell:hover {
-            transform: scale(1.1);
-            z-index: 10;
-        }
-
-        .heatmap-cell[data-level="1"] { background: rgba(201, 169, 98, 0.15); }
-        .heatmap-cell[data-level="2"] { background: rgba(201, 169, 98, 0.3); }
-        .heatmap-cell[data-level="3"] { background: rgba(201, 169, 98, 0.5); }
-        .heatmap-cell[data-level="4"] { background: rgba(201, 169, 98, 0.7); }
-        .heatmap-cell[data-level="5"] { background: rgba(201, 169, 98, 0.9); }
+        .heatmap-cell[data-level="1"] { background: rgba(201, 169, 98, 0.2); }
+        .heatmap-cell[data-level="2"] { background: rgba(201, 169, 98, 0.4); }
+        .heatmap-cell[data-level="3"] { background: rgba(201, 169, 98, 0.6); }
+        .heatmap-cell[data-level="4"] { background: rgba(201, 169, 98, 0.85); }
 
         .heatmap-legend {
             display: flex;
@@ -539,34 +522,9 @@
         }
 
         .legend-cell {
-            width: 16px;
-            height: 16px;
-            border-radius: 3px;
-        }
-
-        /* Tooltip */
-        .heatmap-tooltip {
-            position: fixed;
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 8px;
-            padding: 0.5rem 0.75rem;
-            font-size: 0.75rem;
-            color: var(--text-primary);
-            pointer-events: none;
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.15s;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .heatmap-tooltip.visible {
-            opacity: 1;
-        }
-
-        .heatmap-tooltip-value {
-            color: var(--accent-gold);
-            font-weight: 600;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
         }
 
         /* Sticky Footer */
@@ -1062,14 +1020,14 @@
                     </div>
                 </div>
 
-                <!-- Day × Hour Heatmap -->
+                <!-- GitHub-style Heatmap -->
                 <div class="chart-section animate-in delay-3">
                     <div class="chart-card">
                         <div class="chart-header">
-                            <div class="chart-title">Availability Patterns</div>
-                            <div class="chart-subtitle">When reservations appear by day and hour</div>
+                            <div class="chart-title">Activity Heatmap</div>
+                            <div class="chart-subtitle">Slots spotted over time</div>
                         </div>
-                        <div class="day-hour-heatmap">
+                        <div class="github-heatmap">
                             <div id="heatmap"></div>
                         </div>
                     </div>
@@ -1372,118 +1330,111 @@
                 }
             });
 
-            // Day × Hour heatmap
-            renderDayHourHeatmap();
+            // GitHub-style heatmap
+            renderGitHubHeatmap();
         }
 
-        function renderDayHourHeatmap() {
+        function renderGitHubHeatmap() {
             const heatmapEl = document.getElementById('heatmap');
             if (!heatmapEl) return;
 
-            if (filteredData.length === 0) {
+            // Get date range from data
+            const dates = filteredData.map(d => new Date(d.seen_at_iso));
+            if (dates.length === 0) {
                 heatmapEl.innerHTML = '<div style="color: var(--text-dim); font-size: 0.8rem; padding: 1rem;">No data for selected filters</div>';
                 return;
             }
 
-            // Count slots by weekday_slot and hour_slot
-            const dayCounts = {}; // key: "Mon-14" -> count
-            const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-            const hours = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+            const minDate = new Date(Math.min(...dates));
+            const maxDate = new Date(Math.max(...dates));
 
-            // Initialize counts
-            weekdays.forEach(day => {
-                hours.forEach(hour => {
-                    dayCounts[`${day}-${hour}`] = 0;
-                });
+            // Count slots by date
+            const dateCounts = {};
+            filteredData.forEach(d => {
+                const dateStr = d.seen_at_iso.split('T')[0];
+                dateCounts[dateStr] = (dateCounts[dateStr] || 0) + 1;
             });
 
-            // Count from data
-            filteredData.forEach(d => {
-                const day = d.weekday_slot;
-                const hour = d.hour_slot;
-                if (day && hour !== undefined && hours.includes(hour)) {
-                    const key = `${day}-${hour}`;
-                    dayCounts[key] = (dayCounts[key] || 0) + 1;
+            const maxCount = Math.max(...Object.values(dateCounts), 1);
+
+            // Build calendar grid (GitHub style: columns are weeks, rows are days)
+            // Start from the beginning of the week containing minDate
+            const startDate = new Date(minDate);
+            startDate.setDate(startDate.getDate() - startDate.getDay()); // Go to Sunday
+
+            const endDate = new Date(maxDate);
+            endDate.setDate(endDate.getDate() + (6 - endDate.getDay())); // Go to Saturday
+
+            // Group by weeks
+            const weeks = [];
+            let currentDate = new Date(startDate);
+
+            while (currentDate <= endDate) {
+                const week = [];
+                for (let day = 0; day < 7; day++) {
+                    const dateStr = currentDate.toISOString().split('T')[0];
+                    const count = dateCounts[dateStr] || 0;
+                    let level = 0;
+                    if (count > 0) {
+                        level = Math.min(4, Math.ceil((count / maxCount) * 4));
+                    }
+                    week.push({
+                        date: dateStr,
+                        count,
+                        level,
+                        month: currentDate.getMonth(),
+                        day: currentDate.getDate()
+                    });
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+                weeks.push(week);
+            }
+
+            // Build month labels
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            let monthLabels = '';
+            let lastMonth = -1;
+            weeks.forEach((week, i) => {
+                const firstDay = week.find(d => d.day <= 7);
+                if (firstDay && firstDay.month !== lastMonth && firstDay.day <= 7) {
+                    monthLabels += `<span class="heatmap-month" style="width: ${15 * Math.min(4, weeks.length - i)}px">${months[firstDay.month]}</span>`;
+                    lastMonth = firstDay.month;
                 }
             });
 
-            // Find max for intensity scaling
-            const maxCount = Math.max(...Object.values(dayCounts), 1);
-
-            // Build grid HTML - rows are hours, columns are days
+            // Build grid
+            const dayLabels = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
             let gridHtml = '';
-            hours.forEach(hour => {
+
+            for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
                 gridHtml += '<div class="heatmap-row">';
-                weekdays.forEach(day => {
-                    const key = `${day}-${hour}`;
-                    const count = dayCounts[key] || 0;
-                    let level = 0;
-                    if (count > 0) {
-                        // Scale to 5 levels
-                        level = Math.min(5, Math.ceil((count / maxCount) * 5));
-                    }
-                    const pct = maxCount > 0 ? ((count / filteredData.length) * 100).toFixed(1) : 0;
-                    gridHtml += `<div class="heatmap-cell" data-level="${level}" data-day="${day}" data-hour="${hour}" data-count="${count}" data-pct="${pct}"></div>`;
+                weeks.forEach(week => {
+                    const cell = week[dayOfWeek];
+                    gridHtml += `<div class="heatmap-cell" data-level="${cell.level}" title="${cell.date}: ${cell.count} slots"></div>`;
                 });
                 gridHtml += '</div>';
-            });
+            }
 
             heatmapEl.innerHTML = `
-                <div class="heatmap-container">
-                    <div class="heatmap-hour-labels">
-                        ${hours.map(h => `<div class="heatmap-hour-label">${formatHour(h)}</div>`).join('')}
+                <div class="heatmap-wrapper">
+                    <div class="heatmap-labels">
+                        ${dayLabels.map(l => `<span>${l}</span>`).join('')}
                     </div>
-                    <div class="heatmap-main">
-                        <div class="heatmap-day-labels">
-                            ${weekdays.map(d => `<div class="heatmap-day-label">${d}</div>`).join('')}
-                        </div>
+                    <div class="heatmap-grid">
+                        <div class="heatmap-months">${monthLabels}</div>
                         ${gridHtml}
                     </div>
                 </div>
                 <div class="heatmap-legend">
-                    <span>Rare</span>
+                    <span>Less</span>
                     <div class="legend-cell heatmap-cell" data-level="0"></div>
                     <div class="legend-cell heatmap-cell" data-level="1"></div>
                     <div class="legend-cell heatmap-cell" data-level="2"></div>
                     <div class="legend-cell heatmap-cell" data-level="3"></div>
                     <div class="legend-cell heatmap-cell" data-level="4"></div>
-                    <div class="legend-cell heatmap-cell" data-level="5"></div>
-                    <span>Common</span>
+                    <span>More</span>
                 </div>
-                <div class="heatmap-tooltip" id="heatmapTooltip"></div>
             `;
-
-            // Add hover interactions
-            setupHeatmapTooltips();
-        }
-
-        function setupHeatmapTooltips() {
-            const tooltip = document.getElementById('heatmapTooltip');
-            const cells = document.querySelectorAll('.heatmap-cell[data-day]');
-
-            cells.forEach(cell => {
-                cell.addEventListener('mouseenter', (e) => {
-                    const day = cell.dataset.day;
-                    const hour = parseInt(cell.dataset.hour);
-                    const count = cell.dataset.count;
-                    const pct = cell.dataset.pct;
-
-                    tooltip.innerHTML = `
-                        <strong>${day} ${formatHour(hour)}</strong><br>
-                        <span class="heatmap-tooltip-value">${count} slots</span> (${pct}%)
-                    `;
-                    tooltip.classList.add('visible');
-                });
-
-                cell.addEventListener('mousemove', (e) => {
-                    tooltip.style.left = (e.clientX + 10) + 'px';
-                    tooltip.style.top = (e.clientY - 40) + 'px';
-                });
-
-                cell.addEventListener('mouseleave', () => {
-                    tooltip.classList.remove('visible');
-                });
-            });
         }
 
         function updateCharts() {
@@ -1515,7 +1466,7 @@
             charts.leadTime.update('none');
 
             // Update heatmap
-            renderDayHourHeatmap();
+            renderGitHubHeatmap();
         }
 
         function updateStats() {

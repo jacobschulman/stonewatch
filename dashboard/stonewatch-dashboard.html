@@ -807,28 +807,36 @@
 
         async function initApp() {
             try {
-                let data = null;
-                let dataSource = 'unknown';
+                // Load from BOTH sources and combine
+                let supabaseData = [];
+                let csvData = [];
 
-                // Try Supabase first (primary), fall back to CSV
+                // Try Supabase
                 try {
-                    data = await fetchFromSupabase();
-                    dataSource = 'supabase';
-                    console.log(`✅ Loaded ${data.length} rows from Supabase`);
+                    supabaseData = await fetchFromSupabase();
+                    console.log(`✅ Loaded ${supabaseData.length} rows from Supabase`);
                 } catch (e) {
-                    console.log('⚠️ Supabase unavailable, falling back to CSV...');
-                    data = await fetchFromCSV();
-                    dataSource = 'csv';
-                    console.log(`✅ Loaded ${data.length} rows from CSV`);
+                    console.log('⚠️ Supabase unavailable');
                 }
 
-                if (!data || data.length === 0) {
+                // Also try CSV for historical data
+                try {
+                    csvData = await fetchFromCSV();
+                    console.log(`✅ Loaded ${csvData.length} rows from CSV`);
+                } catch (e) {
+                    console.log('⚠️ CSV unavailable');
+                }
+
+                // Combine both sources
+                const combinedData = [...supabaseData, ...csvData];
+
+                if (combinedData.length === 0) {
                     throw new Error('No data available');
                 }
 
-                // Deduplicate
+                // Deduplicate (prefer newer entries by processing in order)
                 const seen = new Set();
-                allData = data.filter(row => {
+                allData = combinedData.filter(row => {
                     if (!row.slot_at_iso || !row.service) return false;
                     const key = `${row.slot_at_iso}-${row.party_size}-${row.service}`;
                     if (seen.has(key)) return false;
@@ -836,7 +844,7 @@
                     return true;
                 });
 
-                console.log(`📊 ${allData.length} unique slots (source: ${dataSource})`);
+                console.log(`📊 ${allData.length} unique slots (combined: ${supabaseData.length} supabase + ${csvData.length} csv)`);
 
                 filteredData = [...allData];
                 render();

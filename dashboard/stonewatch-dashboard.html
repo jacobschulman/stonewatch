@@ -726,55 +726,92 @@
             timeRange: 'all'
         };
 
+        // Supabase config (read-only public access)
+        // TODO: Replace with your Supabase project URL and anon key
+        // Get these from: Supabase Dashboard > Settings > API
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';  // e.g., 'https://xxxx.supabase.co'
+        const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';  // The 'anon' public key
+
         // Chart.js defaults
         Chart.defaults.color = '#a0a0a8';
         Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.06)';
         Chart.defaults.font.family = "'Inter', sans-serif";
 
+        async function fetchFromSupabase() {
+            const response = await fetch(
+                `${SUPABASE_URL}/rest/v1/availability_logs?select=*&order=seen_at_iso.desc`,
+                {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                }
+            );
+            if (!response.ok) throw new Error('Supabase fetch failed');
+            return await response.json();
+        }
+
+        async function fetchFromCSV() {
+            const paths = [
+                '../availability_log.csv',
+                './availability_log.csv',
+                '/stonewatch/availability_log.csv',
+                'https://raw.githubusercontent.com/jacobschulman/stonewatch/main/availability_log.csv'
+            ];
+
+            for (const path of paths) {
+                try {
+                    const response = await fetch(path);
+                    if (response.ok) {
+                        const csvText = await response.text();
+                        const parsed = Papa.parse(csvText, {
+                            header: true,
+                            skipEmptyLines: true,
+                            dynamicTyping: (field) => {
+                                return !['seen_at_iso', 'slot_at_iso', 'service', 'weekday_slot', 'weekday_seen', 'source'].includes(field);
+                            }
+                        });
+                        return parsed.data.filter(row => row.slot_at_iso && row.service && typeof row.slot_at_iso === 'string');
+                    }
+                } catch (e) {
+                    continue;
+                }
+            }
+            throw new Error('Could not load CSV data');
+        }
+
         async function initApp() {
             try {
-                const paths = [
-                    '../availability_log.csv',
-                    './availability_log.csv',
-                    '/stonewatch/availability_log.csv',
-                    'https://raw.githubusercontent.com/jacobschulman/stonewatch/main/availability_log.csv'
-                ];
+                let data = null;
+                let dataSource = 'unknown';
 
-                let csvText = null;
-                for (const path of paths) {
-                    try {
-                        const response = await fetch(path);
-                        if (response.ok) {
-                            csvText = await response.text();
-                            break;
-                        }
-                    } catch (e) {
-                        continue;
-                    }
+                // Try Supabase first (primary), fall back to CSV
+                try {
+                    data = await fetchFromSupabase();
+                    dataSource = 'supabase';
+                    console.log(`✅ Loaded ${data.length} rows from Supabase`);
+                } catch (e) {
+                    console.log('⚠️ Supabase unavailable, falling back to CSV...');
+                    data = await fetchFromCSV();
+                    dataSource = 'csv';
+                    console.log(`✅ Loaded ${data.length} rows from CSV`);
                 }
 
-                if (!csvText) {
-                    throw new Error('Could not load data');
+                if (!data || data.length === 0) {
+                    throw new Error('No data available');
                 }
-
-                const parsed = Papa.parse(csvText, {
-                    header: true,
-                    skipEmptyLines: true,
-                    dynamicTyping: (field) => {
-                        return !['seen_at_iso', 'slot_at_iso', 'service', 'weekday_slot', 'weekday_seen', 'source'].includes(field);
-                    }
-                });
-
-                allData = parsed.data.filter(row => row.slot_at_iso && row.service && typeof row.slot_at_iso === 'string');
 
                 // Deduplicate
                 const seen = new Set();
-                allData = allData.filter(row => {
+                allData = data.filter(row => {
+                    if (!row.slot_at_iso || !row.service) return false;
                     const key = `${row.slot_at_iso}-${row.party_size}-${row.service}`;
                     if (seen.has(key)) return false;
                     seen.add(key);
                     return true;
                 });
+
+                console.log(`📊 ${allData.length} unique slots (source: ${dataSource})`);
 
                 filteredData = [...allData];
                 render();

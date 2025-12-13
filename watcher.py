@@ -47,6 +47,10 @@ GIST_TOKEN    = os.getenv("GIST_TOKEN")   # required for cross-run dedupe
 STATE_FILENAME = f"seen_{MERCHANT_ID}.json"
 STATE_TTL_DAYS= 5  # keep keys for 5 days, then prune
 
+# Supabase (optional - for persistent database logging)
+SUPABASE_URL = os.getenv("SUPABASE_URL")  # e.g., https://xxxx.supabase.co
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")  # anon/public key
+
 # ---- Constants ----
 NYC = ZoneInfo(TIMEZONE)
 BASE_URL = "https://loyaltyapi.wisely.io/v2/web/reservations/inventory"
@@ -259,20 +263,53 @@ def ensure_csv_header(path: str):
         with open(path, "w", newline="") as f:
             csv.writer(f).writerow(CSV_HEADER)
 
+def log_to_supabase(data: dict):
+    """Insert a row into Supabase availability_logs table."""
+    if not (SUPABASE_URL and SUPABASE_KEY):
+        return False
+    try:
+        resp = requests.post(
+            f"{SUPABASE_URL}/rest/v1/availability_logs",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+            },
+            json=data,
+            timeout=10
+        )
+        resp.raise_for_status()
+        return True
+    except Exception as e:
+        print(f"⚠️  Supabase insert failed: {e}")
+        return False
+
 def log_slot_event(slot_dt_nyc, seen_dt_utc, service, party_size, merchant_id="278278", source="wisely"):
-    ensure_csv_header(LOG_FILE)
     lead = (slot_dt_nyc.astimezone(timezone.utc) - seen_dt_utc).total_seconds() / 60.0
     lead_hours = round(lead / 60.0, 1)
-    row = [
-        seen_dt_utc.isoformat(timespec="seconds"),
-        slot_dt_nyc.isoformat(timespec="seconds"),
-        int(round(lead)), lead_hours,
-        service, int(party_size),
-        slot_dt_nyc.strftime("%a"),
-        seen_dt_utc.astimezone(NYC).strftime("%a"),
-        int(slot_dt_nyc.strftime("%H")),
-        merchant_id, source
-    ]
+
+    # Data for both CSV and Supabase
+    data = {
+        "seen_at_iso": seen_dt_utc.isoformat(timespec="seconds"),
+        "slot_at_iso": slot_dt_nyc.isoformat(timespec="seconds"),
+        "lead_minutes": int(round(lead)),
+        "lead_hours": lead_hours,
+        "service": service,
+        "party_size": int(party_size),
+        "weekday_slot": slot_dt_nyc.strftime("%a"),
+        "weekday_seen": seen_dt_utc.astimezone(NYC).strftime("%a"),
+        "hour_slot": int(slot_dt_nyc.strftime("%H")),
+        "merchant_id": merchant_id,
+        "source": source
+    }
+
+    # Write to Supabase (primary)
+    log_to_supabase(data)
+
+    # Write to CSV (backup)
+    ensure_csv_header(LOG_FILE)
+    row = [data[k] for k in CSV_HEADER]
     with open(LOG_FILE, "a", newline="") as f:
         csv.writer(f).writerow(row)
 

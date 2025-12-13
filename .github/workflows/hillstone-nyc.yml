@@ -48,9 +48,13 @@ jobs:
           TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
           TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
 
-          # --- GIST SETUP FOR DEDUPING --- 
+          # --- GIST SETUP FOR DEDUPING ---
           GIST_ID: ${{ secrets.GIST_ID }}
           GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+
+          # --- SUPABASE DATABASE ---
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
 
           # --- DEBUGGING TEMP ---
           DEBUG: "true"
@@ -64,8 +68,20 @@ jobs:
           if [ -f availability_log.csv ]; then
             git config user.email "actions@github.com"
             git config user.name "GitHub Actions"
+
+            # Pull latest to avoid conflicts (with rebase to keep history clean)
+            git fetch origin main
+            git reset --soft origin/main 2>/dev/null || true
+
+            # Stage and commit
             git add availability_log.csv
-            git commit -m "update logs [skip ci]" || echo "no changes"
-            git push || echo "push skipped"
+            git diff --cached --quiet || git commit -m "update logs [skip ci]"
+
+            # Push with retry logic for race conditions
+            for i in 1 2 3; do
+              git push origin main && break
+              echo "Push failed, retrying after pull..."
+              git pull --rebase origin main
+            done
           fi
 

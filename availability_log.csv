@@ -17878,3 +17878,4 @@ seen_at_iso,slot_at_iso,lead_minutes,lead_hours,service,party_size,weekday_slot,
 2025-12-18T14:27:03+00:00,2025-12-18T11:30:00-05:00,123,2.0,Lunch,4,Thu,Thu,11,278278,wisely
 2025-12-18T15:01:09+00:00,2025-12-21T19:30:00-05:00,4889,81.5,Dinner,2,Sun,Thu,19,278278,wisely
 2025-12-18T15:01:10+00:00,2025-12-21T19:30:00-05:00,4889,81.5,Dinner,4,Sun,Thu,19,278278,wisely
+2025-12-18T15:35:33+00:00,2025-12-21T17:30:00-05:00,4734,78.9,Dinner,2,Sun,Thu,17,278278,wisely

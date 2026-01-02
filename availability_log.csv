@@ -37769,3 +37769,4 @@ seen_at_iso,slot_at_iso,lead_minutes,lead_hours,service,party_size,weekday_slot,
 2026-01-02T15:44:22+00:00,2026-01-02T18:15:00-05:00,451,7.5,Dinner,2,Fri,Fri,18,278278,wisely
 2026-01-02T15:44:40+00:00,2026-01-02T11:30:00-05:00,45,0.8,Lunch,2,Fri,Fri,11,278278,wisely
 2026-01-02T15:44:40+00:00,2026-01-02T11:30:00-05:00,45,0.8,Lunch,4,Fri,Fri,11,278278,wisely
+2026-01-02T17:01:04+00:00,2026-01-02T15:15:00-05:00,194,3.2,Lunch,2,Fri,Fri,15,278278,wisely

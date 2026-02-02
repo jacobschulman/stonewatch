@@ -1,8 +1,10 @@
 name: stonewatch-vip
 
 on:
-  schedule:
-    - cron: "* * * * *"      # runs every 1 minute (when VIP windows are active)
+  # schedule disabled - VIP windows expired (2025-11-05, 2025-11-21)
+  # uncomment and update VIP_WINDOWS dates to re-enable:
+  # schedule:
+  #   - cron: "*/3 * * * *"
 
   workflow_dispatch:         # manual trigger for testing
 

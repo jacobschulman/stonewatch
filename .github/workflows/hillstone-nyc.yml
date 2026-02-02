@@ -3,7 +3,7 @@ name: hillstone-nyc-watch
 on:
   schedule:
     - cron: "*/11 * * * *"      # runs about every 11 minutes
-    - cron: "*/3 20-23 * * *"   # runs every 5 minutes from 4 PM - 10 PM EST
+    - cron: "*/5 20-23 * * *"   # runs every 5 minutes from 3 PM - 7 PM EST (peak hours)
 
   workflow_dispatch:            # lets you run it manually from the Actions tab
 

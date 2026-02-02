@@ -447,6 +447,7 @@ def run_once():
                             # Skip if already seen this slot in this run
                             if key in found_this_run:
                                 continue
+                            found_this_run.add(key)
 
                             # Compute slot datetime + lead days (NYC-local)
                             slot_dt_nyc = compute_slot_dt_nyc(iso, label, dt)
@@ -528,7 +529,6 @@ def run_once():
                             rec["last_milestone"] = milestone
                             rec["last_notified_date"] = today_str
                             seen[key] = rec
-                            found_this_run.add(key)
 
                             
                             candidate = f"{LINK_BASE}?reservation_type_id={type_id}&party_size={party}&search_ts={ts}"
@@ -588,9 +588,6 @@ def run_once():
     
     print("="*60 + "\n")
 
-    # Save updated state & notify
-    save_seen(seen)
-    
     # Save updated state & notify
     save_seen(seen)
     if items:

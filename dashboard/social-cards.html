@@ -277,7 +277,6 @@
                             <div class="card-hdr-eyebrow">Hillstone NYC</div>
                             <div class="card-hdr-title">Reservation<br>Intelligence</div>
                         </div>
-                        <img src="../stonewatch_logo_lo_res.png" class="card-hdr-logo" onerror="this.style.display='none'">
                     </div>
 
                     <!-- 2×2 stat grid -->
@@ -291,19 +290,19 @@
                             <div class="sc-stat-value" id="s1-days">—</div>
                         </div>
                         <div class="sc-stat-card">
-                            <div class="sc-stat-label">Avg Lead</div>
-                            <div class="sc-stat-value" id="s1-lead">—<span class="sc-stat-unit">hrs</span></div>
+                            <div class="sc-stat-label">Prime Hour</div>
+                            <div class="sc-stat-value" id="s1-hour">—</div>
                         </div>
                         <div class="sc-stat-card">
-                            <div class="sc-stat-label">Peak Hour</div>
-                            <div class="sc-stat-value" id="s1-peak">—</div>
+                            <div class="sc-stat-label">Best Day</div>
+                            <div class="sc-stat-value" id="s1-bestday">—</div>
                         </div>
                     </div>
 
                     <div class="card-bottom">
                         <div class="card-wm">
                             <img src="../stonewatch_logo_lo_res.png" class="wm-logo" onerror="this.style.display='none'">
-                            <span class="wm-text">StoneWatch · @stonewatchNYC</span>
+                            <span class="wm-text">@StoneWatchNYC</span>
                         </div>
                     </div>
                 </div>
@@ -323,11 +322,13 @@
                             <div class="card-hdr-eyebrow">Timing Breakdown</div>
                             <div class="card-hdr-title">Slots by Hour</div>
                         </div>
-                        <img src="../stonewatch_logo_lo_res.png" class="card-hdr-logo" onerror="this.style.display='none'">
                     </div>
 
                     <div class="sc-chart-card" style="flex:1; display:flex; flex-direction:column;">
-                        <div class="sc-chart-subtitle" style="margin-bottom:40px">Reservation time distribution · 11am – 9pm</div>
+                        <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:40px">
+                            <div class="sc-chart-subtitle">Reservation time distribution · 11am – 9pm</div>
+                            <div id="card2-rarest" style="font-size:22px; color:var(--accent-gold); opacity:0.85; white-space:nowrap; padding-left:24px; font-weight:500; letter-spacing:0.03em"></div>
+                        </div>
                         <div style="flex:1; position:relative; min-height:0">
                             <canvas id="card2-chart"></canvas>
                         </div>
@@ -336,7 +337,7 @@
                     <div class="card-bottom">
                         <div class="card-wm">
                             <img src="../stonewatch_logo_lo_res.png" class="wm-logo" onerror="this.style.display='none'">
-                            <span class="wm-text">StoneWatch · @stonewatchNYC</span>
+                            <span class="wm-text">@StoneWatchNYC</span>
                         </div>
                     </div>
                 </div>
@@ -356,11 +357,13 @@
                             <div class="card-hdr-eyebrow">Day Pattern</div>
                             <div class="card-hdr-title">Day of Week</div>
                         </div>
-                        <img src="../stonewatch_logo_lo_res.png" class="card-hdr-logo" onerror="this.style.display:'none'">
                     </div>
 
                     <div class="sc-chart-card" style="flex:1; display:flex; flex-direction:column;">
-                        <div class="sc-chart-subtitle" style="margin-bottom:40px">Which days have the most availability</div>
+                        <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:40px">
+                            <div class="sc-chart-subtitle">Which days have the most availability</div>
+                            <div id="card3-hardest" style="font-size:22px; color:var(--accent-rose); opacity:0.9; white-space:nowrap; padding-left:24px; font-weight:500; letter-spacing:0.03em"></div>
+                        </div>
                         <div style="flex:1; position:relative; min-height:0">
                             <canvas id="card3-chart"></canvas>
                         </div>
@@ -369,7 +372,7 @@
                     <div class="card-bottom">
                         <div class="card-wm">
                             <img src="../stonewatch_logo_lo_res.png" class="wm-logo" onerror="this.style.display='none'">
-                            <span class="wm-text">StoneWatch · @stonewatchNYC</span>
+                            <span class="wm-text">@StoneWatchNYC</span>
                         </div>
                     </div>
                 </div>
@@ -386,9 +389,8 @@
                 <div class="card-inner">
 
                     <!-- Slim header -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:48px">
+                    <div style="margin-bottom:48px">
                         <div style="font-size:22px; letter-spacing:0.22em; text-transform:uppercase; color:var(--text-dim); font-weight:500; font-family:'Inter',sans-serif">The Intelligence</div>
-                        <img src="../stonewatch_logo_lo_res.png" class="card-hdr-logo" onerror="this.style.display='none'">
                     </div>
 
                     <div style="display:flex; flex-direction:column; gap:22px; flex:1">
@@ -412,14 +414,17 @@
                     <div class="card-bottom">
                         <div class="card-wm">
                             <img src="../stonewatch_logo_lo_res.png" class="wm-logo" onerror="this.style.display='none'">
-                            <span class="wm-text">StoneWatch · @stonewatchNYC</span>
+                            <span class="wm-text">@StoneWatchNYC</span>
                         </div>
                     </div>
                 </div>
             </div></div>
             <div class="dl-row">
                 <span class="card-seq">04 / 05 — The Intelligence I</span>
-                <button class="download-btn" onclick="dl('card-4','04-intelligence-1',this)">↓ Download PNG</button>
+                <div style="display:flex; gap:0.4rem">
+                    <button class="download-btn" data-editing="false" onclick="toggleEdit('card-4',this)">✎ Edit</button>
+                    <button class="download-btn" onclick="dl('card-4','04-intelligence-1',this)">↓ PNG</button>
+                </div>
             </div>
         </div>
 
@@ -429,9 +434,8 @@
                 <div class="card-inner">
 
                     <!-- Slim header -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:48px">
+                    <div style="margin-bottom:48px">
                         <div style="font-size:22px; letter-spacing:0.22em; text-transform:uppercase; color:var(--text-dim); font-weight:500; font-family:'Inter',sans-serif">The Intelligence</div>
-                        <img src="../stonewatch_logo_lo_res.png" class="card-hdr-logo" onerror="this.style.display='none'">
                     </div>
 
                     <div style="display:flex; flex-direction:column; gap:22px; flex:1">
@@ -455,14 +459,17 @@
                     <div class="card-bottom">
                         <div class="card-wm">
                             <img src="../stonewatch_logo_lo_res.png" class="wm-logo" onerror="this.style.display='none'">
-                            <span class="wm-text">StoneWatch · @stonewatchNYC</span>
+                            <span class="wm-text">@StoneWatchNYC</span>
                         </div>
                     </div>
                 </div>
             </div></div>
             <div class="dl-row">
                 <span class="card-seq">05 / 05 — The Intelligence II</span>
-                <button class="download-btn" onclick="dl('card-5','05-intelligence-2',this)">↓ Download PNG</button>
+                <div style="display:flex; gap:0.4rem">
+                    <button class="download-btn" data-editing="false" onclick="toggleEdit('card-5',this)">✎ Edit</button>
+                    <button class="download-btn" onclick="dl('card-5','05-intelligence-2',this)">↓ PNG</button>
+                </div>
             </div>
         </div>
 
@@ -487,12 +494,21 @@
     Chart.defaults.font.family = "'Inter', sans-serif";
 
     async function fetchSupabase() {
-        const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/unique_slots?select=*&order=seen_at_iso.desc`,
-            { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Range': '0-49999' } }
-        );
-        if (!res.ok) throw new Error('Supabase fetch failed');
-        return res.json();
+        const pageSize = 1000;
+        let all = [], from = 0;
+        while (true) {
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/unique_slots?select=*&order=seen_at_iso.desc`,
+                { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Range': `${from}-${from + pageSize - 1}`, 'Range-Unit': 'items' } }
+            );
+            if (!res.ok) throw new Error('Supabase fetch failed');
+            const rows = await res.json();
+            all = all.concat(rows);
+            if (rows.length < pageSize) break;
+            from += pageSize;
+        }
+        return all;
     }
 
     function fmtHour(h) {
@@ -573,14 +589,23 @@
         if (!s) return;
 
         // ── Card 1: Stats ──
-        document.getElementById('s1-total').textContent = s.n.toLocaleString();
-        document.getElementById('s1-days').textContent  = s.uniqueDates;
-        document.getElementById('s1-lead').innerHTML    = `${s.avgLead.toFixed(1)}<span class="sc-stat-unit">hrs</span>`;
-        document.getElementById('s1-peak').textContent  = fmtHour(s.peakHour);
+        document.getElementById('s1-total').textContent   = s.n.toLocaleString();
+        document.getElementById('s1-days').textContent    = s.uniqueDates;
+        document.getElementById('s1-hour').textContent    = fmtHour(s.peakHour);
+        document.getElementById('s1-bestday').textContent = s.bestDay;
 
         // ── Cards 2 & 3: Charts ──
         updateHourChart(s);
         updateDayChart(s);
+
+        // ── Card 2: Rarest hour callout ──
+        const rarHour = +Object.entries(s.hourCounts).sort((a,b)=>a[1]-b[1])[0]?.[0];
+        setHTML('card2-rarest', `Rarest: ${fmtHour(rarHour)}`);
+
+        // ── Card 3: Hardest day callout ──
+        const DAYS_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+        const hardestDay = DAYS_ORDER.map(d=>({d,c:s.dayCounts[d]||0})).sort((a,b)=>a.c-b.c)[0]?.d;
+        setHTML('card3-hardest', `Hardest to get: ${hardestDay}`);
 
         // ── Card 4: Intelligence I ──
         setHTML('c4-b1-stat', `${s.sameDayPct}%`);
@@ -730,6 +755,21 @@
             btn.textContent = '↓ Download PNG';
             btn.disabled = false;
         }
+    }
+
+    function toggleEdit(cardId, btn) {
+        const card = document.getElementById(cardId);
+        const editables = card.querySelectorAll('.sc-intel-stat, .sc-intel-copy');
+        const isEditing = btn.dataset.editing === 'true';
+        editables.forEach(el => {
+            el.contentEditable = isEditing ? 'false' : 'true';
+            el.style.outline   = isEditing ? '' : '1px dashed rgba(201,169,98,0.4)';
+            el.style.borderRadius = isEditing ? '' : '6px';
+            el.style.cursor    = isEditing ? '' : 'text';
+        });
+        btn.textContent = isEditing ? '✎ Edit' : '✓ Done';
+        btn.dataset.editing = isEditing ? 'false' : 'true';
+        if (!isEditing) editables[0]?.focus();
     }
 
     async function init() {

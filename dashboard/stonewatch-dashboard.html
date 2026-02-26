@@ -763,12 +763,14 @@
         Chart.defaults.font.family = "'Inter', sans-serif";
 
         async function fetchFromSupabase() {
+            // Fetch from the unique_slots view (pre-deduplicated server-side)
             const response = await fetch(
-                `${SUPABASE_URL}/rest/v1/availability_logs?select=*&order=seen_at_iso.desc`,
+                `${SUPABASE_URL}/rest/v1/unique_slots?select=*&order=seen_at_iso.desc`,
                 {
                     headers: {
                         'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Range': '0-49999'
                     }
                 }
             );
@@ -827,14 +829,14 @@
                     console.log('⚠️ CSV unavailable');
                 }
 
-                // Combine both sources
+                // Combine both sources and deduplicate
+                // Supabase view is already deduplicated; CSV may have overlapping entries
                 const combinedData = [...supabaseData, ...csvData];
 
                 if (combinedData.length === 0) {
                     throw new Error('No data available');
                 }
 
-                // Deduplicate (prefer newer entries by processing in order)
                 const seen = new Set();
                 allData = combinedData.filter(row => {
                     if (!row.slot_at_iso || !row.service) return false;
@@ -844,7 +846,7 @@
                     return true;
                 });
 
-                console.log(`📊 ${allData.length} unique slots (combined: ${supabaseData.length} supabase + ${csvData.length} csv)`);
+                console.log(`📊 ${allData.length} unique slots (${supabaseData.length} from supabase view + ${csvData.length} csv, after dedup)`);
 
                 filteredData = [...allData];
                 render();

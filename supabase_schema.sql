@@ -44,3 +44,25 @@ CREATE POLICY "Allow insert from authenticated"
 -- Grant permissions
 GRANT SELECT ON availability_logs TO anon;
 GRANT INSERT ON availability_logs TO anon;
+
+-- View: deduplicated unique slots (keeps first sighting of each slot)
+-- The raw table logs every sighting across runs, so the same slot appears many times.
+-- This view collapses duplicates using (slot_at_iso, party_size, service) as the unique key.
+CREATE OR REPLACE VIEW unique_slots AS
+SELECT DISTINCT ON (slot_at_iso, party_size, service)
+    seen_at_iso,
+    slot_at_iso,
+    lead_minutes,
+    lead_hours,
+    service,
+    party_size,
+    weekday_slot,
+    weekday_seen,
+    hour_slot,
+    merchant_id,
+    source
+FROM availability_logs
+ORDER BY slot_at_iso, party_size, service, seen_at_iso ASC;
+
+-- Allow dashboard to read from the view
+GRANT SELECT ON unique_slots TO anon;

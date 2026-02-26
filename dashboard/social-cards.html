@@ -133,6 +133,32 @@
         }
         .sc-fact-value strong { color:var(--accent-gold); font-weight:600; }
 
+        /* intelligence block — editorial big-stat style */
+        .sc-intel-block {
+            flex:1;
+            background:var(--bg-card);
+            border:1px solid var(--border-subtle);
+            border-radius:28px;
+            padding:48px 60px 44px;
+            display:flex; flex-direction:column;
+            position:relative; overflow:hidden;
+        }
+        .sc-intel-tag {
+            font-size:20px; letter-spacing:0.22em; text-transform:uppercase;
+            color:var(--text-dim); font-weight:500; margin-bottom:18px;
+        }
+        .sc-intel-stat {
+            font-family:'Playfair Display',serif;
+            font-size:122px; font-weight:700;
+            color:var(--accent-gold);
+            line-height:0.88; letter-spacing:-0.02em;
+        }
+        .sc-intel-copy {
+            font-size:30px; color:var(--text-secondary);
+            line-height:1.42; margin-top:22px;
+        }
+        .sc-intel-copy strong { color:var(--text-primary); font-weight:600; }
+
         /* chart-card */
         .sc-chart-card {
             background:var(--bg-card);
@@ -358,36 +384,29 @@
         <div class="card-wrapper">
             <div class="card-preview"><div class="card" id="card-4">
                 <div class="card-inner">
-                    <div class="card-section-hdr">
-                        <div class="card-hdr-left">
-                            <div class="card-hdr-eyebrow">Data Insights</div>
-                            <div class="card-hdr-title">The Intelligence</div>
-                        </div>
+
+                    <!-- Slim header -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:48px">
+                        <div style="font-size:22px; letter-spacing:0.22em; text-transform:uppercase; color:var(--text-dim); font-weight:500; font-family:'Inter',sans-serif">The Intelligence</div>
                         <img src="../stonewatch_logo_lo_res.png" class="card-hdr-logo" onerror="this.style.display='none'">
                     </div>
 
-                    <div style="display:flex; flex-direction:column; gap:20px; flex:1">
-                        <div class="sc-fact-card">
-                            <div class="sc-fact-icon">🎯</div>
-                            <div class="sc-fact-content">
-                                <div class="sc-fact-title">Best Time to Check</div>
-                                <div class="sc-fact-value" id="f1-besttime">—</div>
-                            </div>
+                    <div style="display:flex; flex-direction:column; gap:22px; flex:1">
+
+                        <!-- SAME-DAY RUSH -->
+                        <div class="sc-intel-block">
+                            <div class="sc-intel-tag">🎯&nbsp; Same-Day Rush</div>
+                            <div class="sc-intel-stat" id="c4-b1-stat">—</div>
+                            <div class="sc-intel-copy" id="c4-b1-copy">—</div>
                         </div>
-                        <div class="sc-fact-card">
-                            <div class="sc-fact-icon">📅</div>
-                            <div class="sc-fact-content">
-                                <div class="sc-fact-title">Day Strategy</div>
-                                <div class="sc-fact-value" id="f1-daystrat">—</div>
-                            </div>
+
+                        <!-- WEEKDAY EDGE -->
+                        <div class="sc-intel-block">
+                            <div class="sc-intel-tag">📅&nbsp; Weekday Edge</div>
+                            <div class="sc-intel-stat" id="c4-b2-stat">—</div>
+                            <div class="sc-intel-copy" id="c4-b2-copy">—</div>
                         </div>
-                        <div class="sc-fact-card">
-                            <div class="sc-fact-icon">🍽️</div>
-                            <div class="sc-fact-content">
-                                <div class="sc-fact-title">Service Insight</div>
-                                <div class="sc-fact-value" id="f1-service">—</div>
-                            </div>
-                        </div>
+
                     </div>
 
                     <div class="card-bottom">
@@ -408,36 +427,29 @@
         <div class="card-wrapper">
             <div class="card-preview"><div class="card" id="card-5">
                 <div class="card-inner">
-                    <div class="card-section-hdr">
-                        <div class="card-hdr-left">
-                            <div class="card-hdr-eyebrow">Data Insights, cont.</div>
-                            <div class="card-hdr-title">The Intelligence</div>
-                        </div>
+
+                    <!-- Slim header -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:48px">
+                        <div style="font-size:22px; letter-spacing:0.22em; text-transform:uppercase; color:var(--text-dim); font-weight:500; font-family:'Inter',sans-serif">The Intelligence</div>
                         <img src="../stonewatch_logo_lo_res.png" class="card-hdr-logo" onerror="this.style.display='none'">
                     </div>
 
-                    <div style="display:flex; flex-direction:column; gap:20px; flex:1">
-                        <div class="sc-fact-card">
-                            <div class="sc-fact-icon">⏰</div>
-                            <div class="sc-fact-content">
-                                <div class="sc-fact-title">Prime Time</div>
-                                <div class="sc-fact-value" id="f2-primetime">—</div>
-                            </div>
+                    <div style="display:flex; flex-direction:column; gap:22px; flex:1">
+
+                        <!-- OFF-PEAK WINS -->
+                        <div class="sc-intel-block">
+                            <div class="sc-intel-tag">⏰&nbsp; Off-Peak Wins</div>
+                            <div class="sc-intel-stat" id="c5-b1-stat">—</div>
+                            <div class="sc-intel-copy" id="c5-b1-copy">—</div>
                         </div>
-                        <div class="sc-fact-card">
-                            <div class="sc-fact-icon">👥</div>
-                            <div class="sc-fact-content">
-                                <div class="sc-fact-title">Party Size Edge</div>
-                                <div class="sc-fact-value" id="f2-partysize">—</div>
-                            </div>
+
+                        <!-- (PARTY) SIZE MATTERS -->
+                        <div class="sc-intel-block">
+                            <div class="sc-intel-tag"><span style="opacity:0.42">(party)</span>&nbsp;Size Matters</div>
+                            <div class="sc-intel-stat" id="c5-b2-stat">—</div>
+                            <div class="sc-intel-copy" id="c5-b2-copy">—</div>
                         </div>
-                        <div class="sc-fact-card">
-                            <div class="sc-fact-icon">💡</div>
-                            <div class="sc-fact-content">
-                                <div class="sc-fact-title">Pro Tip</div>
-                                <div class="sc-fact-value" id="f2-protip">—</div>
-                            </div>
-                        </div>
+
                     </div>
 
                     <div class="card-bottom">
@@ -570,27 +582,28 @@
         updateHourChart(s);
         updateDayChart(s);
 
-        // ── Card 4: Fast facts pt 1 ──
-        const svcWinner = s.lunchWins ? 'Lunch' : 'Dinner';
-        const svcLoser  = s.lunchWins ? 'Dinner' : 'Lunch';
-        setHTML('f1-besttime',
-            `<strong>${s.sameDayPct}%</strong> of slots appear within 12 hours. Check frequently for same-day cancellations.`);
-        setHTML('f1-daystrat',
-            `<strong>${s.bestDay}</strong> has the most slots. <strong>${s.weekdayPct}%</strong> of availability is on weekdays vs weekends.`);
-        setHTML('f1-service',
-            `<strong>${svcWinner}</strong> has ${s.svcRatio}x more availability. ${s.lunchWins ? 'Consider a late lunch for easier booking.' : 'Dinner slots are surprisingly accessible.'}`);
+        // ── Card 4: Intelligence I ──
+        setHTML('c4-b1-stat', `${s.sameDayPct}%`);
+        setHTML('c4-b1-copy',
+            `of slots appear within 12 hours of the reservation. Check frequently — last-minute cancellations are your best friend.`);
 
-        // ── Card 5: Fast facts pt 2 ──
+        setHTML('c4-b2-stat', s.bestDay);
+        setHTML('c4-b2-copy',
+            `has the most availability. <strong>${s.weekdayPct}%</strong> of all slots fall on weekdays — weekends are slim pickings.`);
+
+        // ── Card 5: Intelligence II ──
+        const offPeakPct = (100 - +s.primeTimePct);
+        setHTML('c5-b1-stat', `${offPeakPct}%`);
+        setHTML('c5-b1-copy',
+            `of slots fall outside 6–9pm prime time. Go off-peak and the reservation game gets a whole lot easier.`);
+
         const biggerParty = s.party2 > s.party4 ? '2' : '4';
         const partyRatio  = s.party2 > s.party4
             ? (s.party2/(s.party4||1)).toFixed(1)
             : (s.party4/(s.party2||1)).toFixed(1);
-        setHTML('f2-primetime',
-            `Only <strong>${s.primeTimePct}%</strong> of slots are 6–9pm prime time. Off-peak hours give you a major advantage.`);
-        setHTML('f2-partysize',
-            `Tables for <strong>${biggerParty}</strong> are ${partyRatio}x more common. ${s.party2 > s.party4 ? 'Intimate dinners are easier to book.' : 'Group reservations have good availability.'}`);
-        setHTML('f2-protip',
-            `Average lead time is <strong>${s.avgLead.toFixed(1)}h</strong>. Most slots appear ${s.avgLead < 24 ? 'same-day' : '1–2 days out'}—set your alerts accordingly.`);
+        setHTML('c5-b2-stat', `${partyRatio}×`);
+        setHTML('c5-b2-copy',
+            `Tables for <strong>${biggerParty}</strong> are that much more common. Intimate dinners are easier to book — bring one friend, not a crowd.`);
     }
 
     function chartTooltipDefaults() {

@@ -4,836 +4,480 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StoneWatch — Social Cards</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
+        /* ── Shared design tokens (same as main dashboard) ── */
         :root {
-            --bg-primary: #0a0a0f;
-            --bg-card: #1a1a24;
-            --accent-gold: #c9a962;
-            --accent-rose: #b4516d;
-            --accent-emerald: #4a9d7c;
-            --text-primary: #f5f5f7;
-            --text-secondary: #a0a0a8;
-            --text-dim: #6b6b75;
-            --border-subtle: rgba(255, 255, 255, 0.06);
+            --bg-primary:    #0a0a0f;
+            --bg-secondary:  #12121a;
+            --bg-card:       #1a1a24;
+            --accent-gold:   #c9a962;
+            --accent-gold-dim: rgba(201,169,98,0.15);
+            --accent-rose:   #b4516d;
+            --accent-emerald:#4a9d7c;
+            --text-primary:  #f5f5f7;
+            --text-secondary:#a0a0a8;
+            --text-dim:      #6b6b75;
+            --border-subtle: rgba(255,255,255,0.06);
+            --gradient-gold: linear-gradient(135deg,#c9a962 0%,#a88b4a 100%);
+            --gradient-card: linear-gradient(180deg,rgba(255,255,255,0.03) 0%,rgba(255,255,255,0) 100%);
+            --shadow-glow:   0 0 60px rgba(201,169,98,0.1);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { -webkit-font-smoothing: antialiased; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { -webkit-font-smoothing:antialiased; }
+        body { font-family:'Inter',sans-serif; background:var(--bg-primary); color:var(--text-primary); min-height:100vh; }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-        }
-
-        /* ── PAGE CHROME ── */
+        /* ── Page chrome ── */
         .page-header {
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid var(--border-subtle);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
+            padding:1.25rem 2rem; border-bottom:1px solid var(--border-subtle);
+            display:flex; align-items:center; justify-content:space-between;
         }
-
-        .page-title {
-            display: flex;
-            align-items: baseline;
-            gap: 0.75rem;
-        }
-
-        .page-title h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.4rem;
-            color: var(--accent-gold);
-        }
-
-        .page-title span {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-        }
-
-        .back-link {
-            font-size: 0.8rem;
-            color: var(--text-dim);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-            transition: color 0.2s;
-            white-space: nowrap;
-        }
-        .back-link:hover { color: var(--accent-gold); }
+        .page-title { display:flex; align-items:baseline; gap:0.6rem; }
+        .page-title h1 { font-family:'Playfair Display',serif; font-size:1.3rem; background:var(--gradient-gold); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .page-title span { font-size:0.72rem; color:var(--text-dim); letter-spacing:0.12em; text-transform:uppercase; }
+        .back-link { font-size:0.78rem; color:var(--text-dim); text-decoration:none; transition:color .2s; }
+        .back-link:hover { color:var(--accent-gold); }
 
         .controls {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem 2rem;
-            border-bottom: 1px solid var(--border-subtle);
-            flex-wrap: wrap;
+            display:flex; align-items:center; gap:1rem; padding:0.9rem 2rem;
+            border-bottom:1px solid var(--border-subtle); flex-wrap:wrap;
         }
-
-        .controls-label {
-            font-size: 0.72rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        .time-pills { display: flex; gap: 0.4rem; }
-
+        .controls-label { font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.1em; }
+        .time-pills { display:flex; gap:0.35rem; }
         .time-pill {
-            padding: 0.35rem 0.85rem;
-            border: 1px solid var(--border-subtle);
-            border-radius: 20px;
-            background: transparent;
-            color: var(--text-secondary);
-            font-size: 0.78rem;
-            cursor: pointer;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.18s;
+            padding:0.3rem 0.8rem; border:1px solid var(--border-subtle); border-radius:20px;
+            background:transparent; color:var(--text-secondary); font-size:0.75rem;
+            cursor:pointer; font-family:'Inter',sans-serif; transition:all .15s;
         }
-        .time-pill:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
-        .time-pill.active {
-            background: var(--accent-gold);
-            border-color: var(--accent-gold);
-            color: #0a0a0f;
-            font-weight: 600;
-        }
+        .time-pill:hover { border-color:var(--accent-gold); color:var(--accent-gold); }
+        .time-pill.active { background:rgba(201,169,98,0.15); border-color:var(--accent-gold); color:var(--accent-gold); font-weight:600; }
+        .controls-hint { margin-left:auto; font-size:0.7rem; color:var(--text-dim); }
 
-        .controls-hint {
-            margin-left: auto;
-            font-size: 0.72rem;
-            color: var(--text-dim);
-        }
+        .cards-outer { padding:1.5rem 2rem 2.5rem; overflow-x:auto; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.08) transparent; }
+        .cards-row { display:flex; gap:1.25rem; width:max-content; align-items:flex-start; }
+        .card-wrapper { display:flex; flex-direction:column; align-items:center; gap:0.5rem; }
 
-        /* ── CARDS LAYOUT ── */
-        .cards-outer {
-            padding: 1.75rem 2rem 2.5rem;
-            overflow-x: auto;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,0.1) transparent;
-        }
-
-        .cards-row {
-            display: flex;
-            gap: 1.5rem;
-            width: max-content;
-            align-items: flex-start;
-        }
-
-        .card-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.6rem;
-        }
-
-        /* Preview viewport: clips the scaled card */
+        /* Clipping preview — 405px = 1080 × 0.375 */
         .card-preview {
-            width: 405px;   /* 1080 × 0.375 */
-            height: 405px;
-            overflow: hidden;
-            position: relative;
-            border-radius: 10px;
-            box-shadow: 0 8px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
+            width:405px; height:405px; overflow:hidden; position:relative;
+            border-radius:10px;
+            box-shadow:0 8px 48px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04);
         }
 
-        /* ── THE CARDS (fixed 1080×1080 — designed for download) ── */
+        /* ══════════════════════════════════════
+           THE CARDS — everything inside is at
+           1080 × 1080 design scale
+           ══════════════════════════════════════ */
         .card {
-            width: 1080px;
-            height: 1080px;
-            position: absolute;
-            top: 0; left: 0;
-            transform: scale(0.375);
-            transform-origin: top left;
-            font-family: 'Inter', sans-serif;
-            overflow: hidden;
-            background: #0a0a0f;
+            width:1080px; height:1080px;
+            position:absolute; top:0; left:0;
+            transform:scale(0.375); transform-origin:top left;
+            font-family:'Inter',sans-serif;
+            background:var(--bg-primary);
+            overflow:hidden;
         }
 
+        /* ── Scaled-up versions of dashboard primitives ── */
+
+        /* stat-card  (dashboard: ~375px viewport → 1080px = ×2.88 scale) */
+        .sc-stat-card {
+            background:var(--bg-card);
+            background-image:var(--gradient-card);
+            border:1px solid var(--border-subtle);
+            border-radius:28px;
+            padding:44px 50px;
+            position:relative; overflow:hidden;
+        }
+        .sc-stat-card.highlight {
+            border-color:rgba(201,169,98,0.3);
+            box-shadow:var(--shadow-glow);
+        }
+        .sc-stat-label {
+            font-size:24px; color:var(--text-dim);
+            text-transform:uppercase; letter-spacing:0.1em;
+            margin-bottom:14px;
+        }
+        .sc-stat-value {
+            font-family:'Playfair Display',serif;
+            font-size:88px; font-weight:600;
+            color:var(--text-primary); line-height:1;
+        }
+        .sc-stat-card.highlight .sc-stat-value { color:var(--accent-gold); }
+        .sc-stat-unit {
+            font-size:32px; font-family:'Inter',sans-serif;
+            font-weight:400; color:var(--text-secondary); margin-left:8px;
+        }
+
+        /* fact-card */
+        .sc-fact-card {
+            background:var(--bg-card);
+            border:1px solid var(--border-subtle);
+            border-radius:28px;
+            padding:44px 50px;
+            display:flex; align-items:flex-start; gap:36px;
+        }
+        .sc-fact-icon { font-size:64px; line-height:1; flex-shrink:0; }
+        .sc-fact-content { flex:1; }
+        .sc-fact-title {
+            font-size:24px; color:var(--text-dim);
+            text-transform:uppercase; letter-spacing:0.08em;
+            margin-bottom:10px;
+        }
+        .sc-fact-value {
+            font-size:38px; color:var(--text-primary); line-height:1.5;
+        }
+        .sc-fact-value strong { color:var(--accent-gold); font-weight:600; }
+
+        /* chart-card */
+        .sc-chart-card {
+            background:var(--bg-card);
+            background-image:var(--gradient-card);
+            border:1px solid var(--border-subtle);
+            border-radius:32px;
+            padding:56px 60px;
+            position:relative; overflow:hidden;
+        }
+        .sc-chart-title {
+            font-family:'Playfair Display',serif;
+            font-size:52px; font-weight:600; color:var(--text-primary);
+        }
+        .sc-chart-subtitle {
+            font-size:28px; color:var(--text-dim); margin-top:8px;
+        }
+
+        /* Watermark */
+        .card-wm {
+            display:flex; align-items:center; gap:16px; opacity:0.45;
+        }
+        .wm-logo {
+            width:36px; height:36px; border-radius:9px; object-fit:cover;
+        }
+        .wm-text { font-size:24px; color:var(--text-secondary); letter-spacing:0.04em; }
+
+        /* Card inner layout */
         .card-inner {
-            width: 100%;
-            height: 100%;
-            padding: 76px 80px;
-            display: flex;
-            flex-direction: column;
+            position:absolute; inset:0;
+            padding:72px 76px;
+            display:flex; flex-direction:column;
         }
 
-        /* Card meta row */
-        .card-meta {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 0;
+        /* Card section header (used on chart + fact cards) */
+        .card-section-hdr {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-bottom:44px;
+        }
+        .card-hdr-left {}
+        .card-hdr-eyebrow {
+            font-size:22px; color:var(--text-dim); text-transform:uppercase;
+            letter-spacing:0.14em; margin-bottom:8px;
+        }
+        .card-hdr-title {
+            font-family:'Playfair Display',serif;
+            font-size:56px; font-weight:600;
+            background:var(--gradient-gold);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+            background-clip:text;
+        }
+        .card-hdr-right { text-align:right; }
+        .card-hdr-logo { width:56px; height:56px; border-radius:14px; object-fit:cover; }
+
+        /* Bottom row: watermark flush to bottom */
+        .card-bottom {
+            margin-top:auto;
+            padding-top:28px;
+            display:flex; align-items:center; justify-content:flex-end;
         }
 
-        .card-brand {
-            font-family: 'Playfair Display', serif;
-            font-size: 30px;
-            color: #c9a962;
-            letter-spacing: 0.04em;
-        }
-
-        .card-handle {
-            font-size: 22px;
-            color: #6b6b75;
-            letter-spacing: 0.04em;
-        }
-
-        /* Download button */
+        /* ── Download button ── */
+        .dl-row { display:flex; align-items:center; justify-content:space-between; width:100%; }
+        .card-seq { font-size:0.66rem; color:var(--text-dim); letter-spacing:0.05em; }
         .download-btn {
-            padding: 0.4rem 1rem;
-            border: 1px solid var(--border-subtle);
-            border-radius: 6px;
-            background: transparent;
-            color: var(--text-secondary);
-            font-size: 0.72rem;
-            cursor: pointer;
-            font-family: 'Inter', sans-serif;
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-            transition: all 0.18s;
+            padding:0.32rem 0.85rem; border:1px solid var(--border-subtle);
+            border-radius:5px; background:transparent; color:var(--text-secondary);
+            font-size:0.7rem; cursor:pointer; font-family:'Inter',sans-serif; transition:all .15s;
         }
-        .download-btn:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
-        .download-btn:disabled { opacity: 0.5; cursor: default; }
-
-        .card-meta-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-        }
-
-        .card-seq {
-            font-size: 0.68rem;
-            color: var(--text-dim);
-            letter-spacing: 0.06em;
-        }
+        .download-btn:hover { border-color:var(--accent-gold); color:var(--accent-gold); }
+        .download-btn:disabled { opacity:.45; cursor:default; }
 
         /* Loading */
-        .loading-state {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 60vh;
-            flex-direction: column;
-            gap: 1rem;
-            color: var(--text-dim);
-        }
+        .loading-state { display:flex; align-items:center; justify-content:center; height:60vh; flex-direction:column; gap:1rem; color:var(--text-dim); }
+        .spinner { width:28px; height:28px; border:2px solid var(--border-subtle); border-top-color:var(--accent-gold); border-radius:50%; animation:spin .75s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
 
-        .spinner {
-            width: 30px; height: 30px;
-            border: 2px solid var(--border-subtle);
-            border-top-color: var(--accent-gold);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .page-footer {
-            padding: 1.25rem 2rem;
-            border-top: 1px solid var(--border-subtle);
-            text-align: center;
-            font-size: 0.72rem;
-            color: var(--text-dim);
-        }
-
-        /* ════════════════════════════════
-           CARD INTERNALS — all px values
-           at 1080×1080 scale
-           ════════════════════════════════ */
-
-        /* ── CARD 1: COVER ── */
-        #card-1 {
-            background:
-                radial-gradient(ellipse at 15% 85%, rgba(201,169,98,0.07) 0%, transparent 55%),
-                radial-gradient(ellipse at 85% 15%, rgba(180,81,109,0.04) 0%, transparent 50%),
-                #0a0a0f;
-        }
-
-        .c1-top { display: flex; justify-content: space-between; align-items: flex-start; }
-
-        .c1-brand .name {
-            font-family: 'Playfair Display', serif;
-            font-size: 38px; font-weight: 700;
-            color: #c9a962; letter-spacing: 0.04em;
-        }
-        .c1-brand .sub {
-            font-size: 22px; color: #6b6b75;
-            letter-spacing: 0.22em; text-transform: uppercase;
-            margin-top: 6px;
-        }
-
-        .c1-date { text-align: right; }
-        .c1-date .lbl { font-size: 20px; color: #6b6b75; letter-spacing: 0.15em; text-transform: uppercase; }
-        .c1-date .val { font-size: 24px; color: #a0a0a8; margin-top: 6px; }
-
-        .c1-hero {
-            flex: 1;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            text-align: center;
-        }
-        .c1-hero .big-num {
-            font-family: 'Playfair Display', serif;
-            font-size: 220px; font-weight: 900;
-            line-height: 0.88; letter-spacing: -0.02em;
-            color: #c9a962;
-        }
-        .c1-hero .big-label {
-            font-size: 34px; letter-spacing: 0.32em;
-            text-transform: uppercase; color: #a0a0a8;
-            margin-top: 26px; font-weight: 500;
-        }
-        .c1-hero .big-sub {
-            font-family: 'Playfair Display', serif;
-            font-size: 26px; font-style: italic;
-            color: #6b6b75; margin-top: 10px;
-        }
-
-        .c1-spark { padding-top: 12px; }
-        .c1-spark .spark-label {
-            font-size: 20px; color: #6b6b75;
-            letter-spacing: 0.14em; text-transform: uppercase;
-            margin-bottom: 14px;
-        }
-        .spark-bars {
-            display: flex; align-items: flex-end;
-            gap: 5px; height: 56px;
-        }
-        .spark-bar {
-            flex: 1; border-radius: 3px 3px 0 0;
-            min-height: 3px; background: rgba(201,169,98,0.15);
-        }
-        .spark-bar.lit { background: rgba(201,169,98,0.65); }
-        .spark-dates {
-            display: flex; justify-content: space-between;
-            margin-top: 8px;
-        }
-        .spark-dates span { font-size: 18px; color: #6b6b75; }
-
-        .c1-footer {
-            display: flex; justify-content: flex-end;
-            align-items: center; margin-top: 32px;
-        }
-
-        /* ── CARD 2: WHEN TO HUNT ── */
-        #card-2 {
-            background:
-                radial-gradient(ellipse at 85% 10%, rgba(201,169,98,0.06) 0%, transparent 50%),
-                #0a0a0f;
-        }
-
-        .c2-heading { margin-bottom: 0; }
-        .c2-heading .eyebrow {
-            font-size: 22px; color: #6b6b75;
-            letter-spacing: 0.2em; text-transform: uppercase;
-        }
-        .c2-heading .h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 88px; font-weight: 700;
-            color: #f5f5f7; line-height: 0.95; margin-top: 6px;
-        }
-        .c2-heading .h2 {
-            font-family: 'Playfair Display', serif;
-            font-size: 88px; font-weight: 700;
-            color: #c9a962; line-height: 0.95;
-        }
-
-        .c2-hero {
-            flex: 1;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            text-align: center;
-        }
-        .c2-peak {
-            font-family: 'Playfair Display', serif;
-            font-size: 230px; font-weight: 900;
-            line-height: 0.85; letter-spacing: -0.03em;
-            color: #c9a962;
-        }
-        .c2-peak-lbl {
-            font-size: 34px; color: #a0a0a8;
-            letter-spacing: 0.12em; text-transform: uppercase;
-            margin-top: 18px;
-        }
-
-        .c2-strip-section { margin-top: 0; }
-        .c2-strip-lbl {
-            font-size: 20px; color: #6b6b75;
-            letter-spacing: 0.15em; text-transform: uppercase;
-            margin-bottom: 14px;
-        }
-        .hour-strip { display: flex; gap: 7px; }
-        .hour-cell {
-            flex: 1; height: 72px; border-radius: 5px;
-            border: 1px solid rgba(255,255,255,0.04);
-        }
-        .hour-labels { display: flex; gap: 7px; margin-top: 8px; }
-        .hour-lbl-item {
-            flex: 1; text-align: center;
-            font-size: 18px; color: #6b6b75;
-        }
-
-        .c2-callout {
-            margin-top: 36px;
-            padding: 28px 36px;
-            background: rgba(201,169,98,0.05);
-            border: 1px solid rgba(201,169,98,0.14);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 24px;
-        }
-        .c2-callout .txt {
-            font-family: 'Playfair Display', serif;
-            font-size: 30px; font-style: italic;
-            color: #a0a0a8; line-height: 1.45; flex: 1;
-        }
-        .c2-callout .hdl { font-size: 22px; color: #6b6b75; white-space: nowrap; }
-
-        /* ── CARD 3: BEST DAYS ── */
-        #card-3 {
-            background:
-                radial-gradient(ellipse at 5% 95%, rgba(74,157,124,0.05) 0%, transparent 50%),
-                #0a0a0f;
-        }
-
-        .c3-top {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            margin-bottom: 0;
-        }
-
-        .c3-title .line1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 60px; font-weight: 400; color: #6b6b75;
-        }
-        .c3-title .line2 {
-            font-family: 'Playfair Display', serif;
-            font-size: 108px; font-weight: 700; color: #c9a962;
-            line-height: 0.9;
-        }
-
-        .c3-winner { text-align: right; }
-        .c3-winner .w-lbl {
-            font-size: 22px; color: #6b6b75;
-            letter-spacing: 0.2em; text-transform: uppercase;
-        }
-        .c3-winner .w-day {
-            font-family: 'Playfair Display', serif;
-            font-size: 70px; font-weight: 700;
-            color: #c9a962; line-height: 1;
-        }
-
-        .c3-bars {
-            flex: 1;
-            display: flex; flex-direction: column;
-            justify-content: center;
-            gap: 19px;
-            margin: 40px 0;
-        }
-
-        .day-row {
-            display: flex; align-items: center; gap: 22px;
-        }
-        .day-name {
-            width: 76px; font-size: 29px; font-weight: 500;
-            color: #a0a0a8; text-align: right; flex-shrink: 0;
-        }
-        .day-name.best { color: #c9a962; font-weight: 700; }
-        .day-track {
-            flex: 1; height: 38px;
-            background: rgba(255,255,255,0.04);
-            border-radius: 4px; overflow: hidden;
-        }
-        .day-fill {
-            height: 100%; border-radius: 4px;
-            background: rgba(74,157,124,0.45);
-        }
-        .day-fill.best { background: #c9a962; }
-        .day-pct {
-            width: 72px; font-size: 27px;
-            color: #6b6b75; flex-shrink: 0; text-align: right;
-        }
-        .day-pct.best { color: #c9a962; font-weight: 600; }
-
-        .c3-rule {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(201,169,98,0.3), transparent);
-        }
-
-        .c3-foot {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 28px;
-        }
-        .c3-stat { font-size: 30px; color: #a0a0a8; }
-        .c3-stat strong { color: #f5f5f7; font-weight: 700; }
-
-        /* ── CARD 4: THE WINDOW ── */
-        #card-4 {
-            background:
-                radial-gradient(ellipse at 50% 0%, rgba(180,81,109,0.07) 0%, transparent 45%),
-                #0a0a0f;
-        }
-
-        .c4-heading .eyebrow {
-            font-size: 22px; color: #6b6b75;
-            letter-spacing: 0.2em; text-transform: uppercase;
-        }
-        .c4-heading .h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 88px; font-weight: 700;
-            color: #f5f5f7; line-height: 0.95; margin-top: 6px;
-        }
-
-        .c4-hero {
-            text-align: center;
-            padding: 44px 0 24px;
-        }
-        .c4-pct {
-            font-family: 'Playfair Display', serif;
-            font-size: 200px; font-weight: 900;
-            line-height: 0.85; letter-spacing: -0.03em;
-            color: #c9a962;
-        }
-        .c4-pct-lbl {
-            font-size: 38px; color: #a0a0a8; margin-top: 18px;
-        }
-        .c4-pct-lbl strong { color: #f5f5f7; font-weight: 600; }
-
-        .c4-lead {
-            flex: 1;
-            display: flex; flex-direction: column;
-            justify-content: center;
-            gap: 20px;
-        }
-
-        .lead-row { display: flex; align-items: center; gap: 22px; }
-        .lead-lbl {
-            width: 116px; font-size: 26px;
-            color: #a0a0a8; flex-shrink: 0;
-        }
-        .lead-track {
-            flex: 1; height: 42px;
-            background: rgba(255,255,255,0.04);
-            border-radius: 4px; overflow: hidden;
-        }
-        .lead-fill { height: 100%; border-radius: 4px; }
-        .lead-pct {
-            width: 64px; font-size: 26px;
-            text-align: right; flex-shrink: 0; font-weight: 600;
-        }
-
-        .c4-callout {
-            margin-top: 36px;
-            padding: 28px 36px;
-            background: rgba(180,81,109,0.05);
-            border: 1px solid rgba(180,81,109,0.14);
-            border-radius: 10px;
-            display: flex; align-items: center;
-            justify-content: space-between; gap: 24px;
-        }
-        .c4-callout .txt {
-            font-family: 'Playfair Display', serif;
-            font-size: 30px; font-style: italic;
-            color: #a0a0a8; line-height: 1.45; flex: 1;
-        }
-        .c4-callout .hdl { font-size: 22px; color: #6b6b75; white-space: nowrap; }
-
-        /* ── CARD 5: THE PLAYBOOK ── */
-        #card-5 {
-            background:
-                radial-gradient(ellipse at 50% 105%, rgba(201,169,98,0.05) 0%, transparent 55%),
-                #0a0a0f;
-        }
-
-        .c5-hdr { margin-bottom: 52px; }
-        .c5-hdr .eyebrow {
-            font-size: 22px; color: #6b6b75;
-            letter-spacing: 0.2em; text-transform: uppercase;
-        }
-        .c5-hdr .title {
-            font-family: 'Playfair Display', serif;
-            font-size: 108px; font-weight: 700;
-            color: #c9a962; line-height: 0.88; margin-top: 6px;
-        }
-
-        .c5-tips { flex: 1; display: flex; flex-direction: column; }
-
-        .tip-item {
-            display: flex; align-items: flex-start;
-            gap: 42px;
-            padding: 44px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
-        .tip-item:last-child { border-bottom: none; }
-
-        .tip-num {
-            font-family: 'Playfair Display', serif;
-            font-size: 68px; font-weight: 700;
-            color: #c9a962; opacity: 0.28;
-            flex-shrink: 0; width: 76px; line-height: 1;
-        }
-        .tip-body { flex: 1; }
-        .tip-title {
-            font-size: 40px; font-weight: 600;
-            color: #f5f5f7; line-height: 1.2;
-        }
-        .tip-desc {
-            font-size: 28px; color: #a0a0a8;
-            margin-top: 10px; line-height: 1.45;
-        }
-
-        .c5-foot {
-            display: flex; align-items: center;
-            justify-content: space-between;
-            padding-top: 36px;
-        }
-        .c5-brand {
-            font-family: 'Playfair Display', serif;
-            font-size: 30px; font-weight: 700;
-            color: #c9a962;
-        }
+        .page-footer { padding:1rem 2rem; border-top:1px solid var(--border-subtle); text-align:center; font-size:0.7rem; color:var(--text-dim); }
+        .page-footer a { color:inherit; text-decoration:none; }
     </style>
 </head>
 <body>
 
 <div id="loadingState" class="loading-state">
     <div class="spinner"></div>
-    <div style="font-size: 0.85rem">Loading StoneWatch data…</div>
+    <div style="font-size:.82rem">Loading StoneWatch data…</div>
 </div>
 
 <div id="mainContent" style="display:none">
 
     <div class="page-header">
-        <div class="page-title">
-            <h1>StoneWatch</h1>
-            <span>Social Cards</span>
-        </div>
+        <div class="page-title"><h1>StoneWatch</h1><span>Social Cards</span></div>
         <a href="stonewatch-dashboard.html" class="back-link">← Dashboard</a>
     </div>
 
     <div class="controls">
         <span class="controls-label">Time range</span>
         <div class="time-pills">
-            <button class="time-pill" onclick="setTimeRange('7', this)">7 Days</button>
-            <button class="time-pill" onclick="setTimeRange('14', this)">14 Days</button>
-            <button class="time-pill" onclick="setTimeRange('30', this)">30 Days</button>
-            <button class="time-pill active" onclick="setTimeRange('all', this)">All Time</button>
+            <button class="time-pill" onclick="setRange('7',this)">7 Days</button>
+            <button class="time-pill" onclick="setRange('14',this)">14 Days</button>
+            <button class="time-pill" onclick="setRange('30',this)">30 Days</button>
+            <button class="time-pill active" onclick="setRange('all',this)">All Time</button>
         </div>
-        <span class="controls-hint">Click ↓ below any card to download as PNG (1080×1080)</span>
+        <span class="controls-hint">↓ below each card downloads 1080×1080 PNG</span>
     </div>
 
-    <div class="cards-outer">
-        <div class="cards-row">
+    <div class="cards-outer"><div class="cards-row">
 
-            <!-- ━━━━━━━━━━━━━━━ CARD 1: COVER ━━━━━━━━━━━━━━━ -->
-            <div class="card-wrapper">
-                <div class="card-preview">
-                    <div class="card" id="card-1">
-                        <div class="card-inner">
-                            <div class="c1-top">
-                                <div class="c1-brand">
-                                    <div class="name">StoneWatch</div>
-                                    <div class="sub">NYC</div>
-                                </div>
-                                <div class="c1-date">
-                                    <div class="lbl">Report</div>
-                                    <div class="val" id="c1-date-range">—</div>
-                                </div>
-                            </div>
+        <!-- ████  CARD 1 · THE NUMBERS  ████ -->
+        <div class="card-wrapper">
+            <div class="card-preview"><div class="card" id="card-1">
+                <div class="card-inner">
 
-                            <div class="c1-hero">
-                                <div class="big-num" id="c1-total">—</div>
-                                <div class="big-label">Slots Spotted</div>
-                                <div class="big-sub">at Hillstone NYC</div>
-                            </div>
+                    <!-- Header -->
+                    <div class="card-section-hdr">
+                        <div class="card-hdr-left">
+                            <div class="card-hdr-eyebrow">Hillstone NYC</div>
+                            <div class="card-hdr-title">Reservation<br>Intelligence</div>
+                        </div>
+                        <img src="../stonewatch_logo_lo_res.png" class="card-hdr-logo" onerror="this.style.display='none'">
+                    </div>
 
-                            <div class="c1-spark">
-                                <div class="spark-label">Daily Activity — Last 14 Days</div>
-                                <div class="spark-bars" id="c1-sparkline"></div>
-                                <div class="spark-dates" id="c1-spark-dates">
-                                    <span></span><span></span>
-                                </div>
-                            </div>
+                    <!-- 2×2 stat grid -->
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; flex:1; align-content:start">
+                        <div class="sc-stat-card highlight">
+                            <div class="sc-stat-label">Slots Found</div>
+                            <div class="sc-stat-value" id="s1-total">—</div>
+                        </div>
+                        <div class="sc-stat-card">
+                            <div class="sc-stat-label">Unique Days</div>
+                            <div class="sc-stat-value" id="s1-days">—</div>
+                        </div>
+                        <div class="sc-stat-card">
+                            <div class="sc-stat-label">Avg Lead</div>
+                            <div class="sc-stat-value" id="s1-lead">—<span class="sc-stat-unit">hrs</span></div>
+                        </div>
+                        <div class="sc-stat-card">
+                            <div class="sc-stat-label">Peak Hour</div>
+                            <div class="sc-stat-value" id="s1-peak">—</div>
+                        </div>
+                    </div>
 
-                            <div class="c1-footer">
-                                <span class="card-handle">@stonewatchNYC</span>
-                            </div>
+                    <div class="card-bottom">
+                        <div class="card-wm">
+                            <img src="../stonewatch_logo_lo_res.png" class="wm-logo" onerror="this.style.display='none'">
+                            <span class="wm-text">StoneWatch · @stonewatchNYC</span>
                         </div>
                     </div>
                 </div>
-                <div class="card-meta-row">
-                    <span class="card-seq">01 / 05 — Cover</span>
-                    <button class="download-btn" onclick="downloadCard('card-1', '01-stonewatch-cover', this)">↓ Download PNG</button>
-                </div>
+            </div></div>
+            <div class="dl-row">
+                <span class="card-seq">01 / 05 — The Numbers</span>
+                <button class="download-btn" onclick="dl('card-1','01-numbers',this)">↓ Download PNG</button>
             </div>
-
-            <!-- ━━━━━━━━━━━━━━━ CARD 2: WHEN TO HUNT ━━━━━━━━━━━━━━━ -->
-            <div class="card-wrapper">
-                <div class="card-preview">
-                    <div class="card" id="card-2">
-                        <div class="card-inner">
-                            <div class="c2-heading">
-                                <div class="eyebrow">Reservation Intelligence</div>
-                                <div class="h1">Best Time</div>
-                                <div class="h2">To Check</div>
-                            </div>
-
-                            <div class="c2-hero">
-                                <div class="c2-peak" id="c2-peak">—</div>
-                                <div class="c2-peak-lbl">is peak availability</div>
-                            </div>
-
-                            <div class="c2-strip-section">
-                                <div class="c2-strip-lbl">Slots by Hour</div>
-                                <div class="hour-strip" id="c2-hour-strip"></div>
-                                <div class="hour-labels" id="c2-hour-labels"></div>
-                            </div>
-
-                            <div class="c2-callout">
-                                <div class="txt" id="c2-insight">"—"</div>
-                                <div class="hdl">@stonewatchNYC</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-meta-row">
-                    <span class="card-seq">02 / 05 — When to Hunt</span>
-                    <button class="download-btn" onclick="downloadCard('card-2', '02-stonewatch-timing', this)">↓ Download PNG</button>
-                </div>
-            </div>
-
-            <!-- ━━━━━━━━━━━━━━━ CARD 3: BEST DAYS ━━━━━━━━━━━━━━━ -->
-            <div class="card-wrapper">
-                <div class="card-preview">
-                    <div class="card" id="card-3">
-                        <div class="card-inner">
-                            <div class="c3-top">
-                                <div class="c3-title">
-                                    <div class="line1">Day of</div>
-                                    <div class="line2">Week</div>
-                                </div>
-                                <div class="c3-winner">
-                                    <div class="w-lbl">Best Day</div>
-                                    <div class="w-day" id="c3-best-day">—</div>
-                                </div>
-                            </div>
-
-                            <div class="c3-bars" id="c3-bars"></div>
-
-                            <div class="c3-rule"></div>
-                            <div class="c3-foot">
-                                <div class="c3-stat" id="c3-weekday-stat">—</div>
-                                <div style="font-size:22px; color:#6b6b75">@stonewatchNYC</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-meta-row">
-                    <span class="card-seq">03 / 05 — Best Days</span>
-                    <button class="download-btn" onclick="downloadCard('card-3', '03-stonewatch-days', this)">↓ Download PNG</button>
-                </div>
-            </div>
-
-            <!-- ━━━━━━━━━━━━━━━ CARD 4: THE WINDOW ━━━━━━━━━━━━━━━ -->
-            <div class="card-wrapper">
-                <div class="card-preview">
-                    <div class="card" id="card-4">
-                        <div class="card-inner">
-                            <div class="c4-heading">
-                                <div class="eyebrow">Lead Time Analysis</div>
-                                <div class="h1">How Fast<br>Do They Go?</div>
-                            </div>
-
-                            <div class="c4-hero">
-                                <div class="c4-pct" id="c4-pct">—%</div>
-                                <div class="c4-pct-lbl">appear within <strong>12 hours</strong></div>
-                            </div>
-
-                            <div class="c4-lead" id="c4-lead"></div>
-
-                            <div class="c4-callout">
-                                <div class="txt" id="c4-tip">"—"</div>
-                                <div class="hdl">@stonewatchNYC</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-meta-row">
-                    <span class="card-seq">04 / 05 — The Window</span>
-                    <button class="download-btn" onclick="downloadCard('card-4', '04-stonewatch-window', this)">↓ Download PNG</button>
-                </div>
-            </div>
-
-            <!-- ━━━━━━━━━━━━━━━ CARD 5: THE PLAYBOOK ━━━━━━━━━━━━━━━ -->
-            <div class="card-wrapper">
-                <div class="card-preview">
-                    <div class="card" id="card-5">
-                        <div class="card-inner">
-                            <div class="c5-hdr">
-                                <div class="eyebrow">Strategy Guide</div>
-                                <div class="title">The<br>Playbook</div>
-                            </div>
-
-                            <div class="c5-tips" id="c5-tips"></div>
-
-                            <div class="c5-foot">
-                                <div class="c5-brand">StoneWatch</div>
-                                <div style="font-size:26px; color:#6b6b75">@stonewatchNYC</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-meta-row">
-                    <span class="card-seq">05 / 05 — The Playbook</span>
-                    <button class="download-btn" onclick="downloadCard('card-5', '05-stonewatch-playbook', this)">↓ Download PNG</button>
-                </div>
-            </div>
-
         </div>
-    </div>
+
+        <!-- ████  CARD 2 · SLOTS BY HOUR  ████ -->
+        <div class="card-wrapper">
+            <div class="card-preview"><div class="card" id="card-2">
+                <div class="card-inner">
+                    <div class="card-section-hdr">
+                        <div class="card-hdr-left">
+                            <div class="card-hdr-eyebrow">Timing Breakdown</div>
+                            <div class="card-hdr-title">Slots by Hour</div>
+                        </div>
+                        <img src="../stonewatch_logo_lo_res.png" class="card-hdr-logo" onerror="this.style.display='none'">
+                    </div>
+
+                    <div class="sc-chart-card" style="flex:1; display:flex; flex-direction:column;">
+                        <div class="sc-chart-subtitle" style="margin-bottom:40px">Reservation time distribution · 11am – 9pm</div>
+                        <div style="flex:1; position:relative; min-height:0">
+                            <canvas id="card2-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card-bottom">
+                        <div class="card-wm">
+                            <img src="../stonewatch_logo_lo_res.png" class="wm-logo" onerror="this.style.display='none'">
+                            <span class="wm-text">StoneWatch · @stonewatchNYC</span>
+                        </div>
+                    </div>
+                </div>
+            </div></div>
+            <div class="dl-row">
+                <span class="card-seq">02 / 05 — Slots by Hour</span>
+                <button class="download-btn" onclick="dl('card-2','02-by-hour',this)">↓ Download PNG</button>
+            </div>
+        </div>
+
+        <!-- ████  CARD 3 · DAY OF WEEK  ████ -->
+        <div class="card-wrapper">
+            <div class="card-preview"><div class="card" id="card-3">
+                <div class="card-inner">
+                    <div class="card-section-hdr">
+                        <div class="card-hdr-left">
+                            <div class="card-hdr-eyebrow">Day Pattern</div>
+                            <div class="card-hdr-title">Day of Week</div>
+                        </div>
+                        <img src="../stonewatch_logo_lo_res.png" class="card-hdr-logo" onerror="this.style.display:'none'">
+                    </div>
+
+                    <div class="sc-chart-card" style="flex:1; display:flex; flex-direction:column;">
+                        <div class="sc-chart-subtitle" style="margin-bottom:40px">Which days have the most availability</div>
+                        <div style="flex:1; position:relative; min-height:0">
+                            <canvas id="card3-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card-bottom">
+                        <div class="card-wm">
+                            <img src="../stonewatch_logo_lo_res.png" class="wm-logo" onerror="this.style.display='none'">
+                            <span class="wm-text">StoneWatch · @stonewatchNYC</span>
+                        </div>
+                    </div>
+                </div>
+            </div></div>
+            <div class="dl-row">
+                <span class="card-seq">03 / 05 — Day of Week</span>
+                <button class="download-btn" onclick="dl('card-3','03-by-day',this)">↓ Download PNG</button>
+            </div>
+        </div>
+
+        <!-- ████  CARD 4 · THE INTELLIGENCE PT 1  ████ -->
+        <div class="card-wrapper">
+            <div class="card-preview"><div class="card" id="card-4">
+                <div class="card-inner">
+                    <div class="card-section-hdr">
+                        <div class="card-hdr-left">
+                            <div class="card-hdr-eyebrow">Data Insights</div>
+                            <div class="card-hdr-title">The Intelligence</div>
+                        </div>
+                        <img src="../stonewatch_logo_lo_res.png" class="card-hdr-logo" onerror="this.style.display='none'">
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:20px; flex:1">
+                        <div class="sc-fact-card">
+                            <div class="sc-fact-icon">🎯</div>
+                            <div class="sc-fact-content">
+                                <div class="sc-fact-title">Best Time to Check</div>
+                                <div class="sc-fact-value" id="f1-besttime">—</div>
+                            </div>
+                        </div>
+                        <div class="sc-fact-card">
+                            <div class="sc-fact-icon">📅</div>
+                            <div class="sc-fact-content">
+                                <div class="sc-fact-title">Day Strategy</div>
+                                <div class="sc-fact-value" id="f1-daystrat">—</div>
+                            </div>
+                        </div>
+                        <div class="sc-fact-card">
+                            <div class="sc-fact-icon">🍽️</div>
+                            <div class="sc-fact-content">
+                                <div class="sc-fact-title">Service Insight</div>
+                                <div class="sc-fact-value" id="f1-service">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-bottom">
+                        <div class="card-wm">
+                            <img src="../stonewatch_logo_lo_res.png" class="wm-logo" onerror="this.style.display='none'">
+                            <span class="wm-text">StoneWatch · @stonewatchNYC</span>
+                        </div>
+                    </div>
+                </div>
+            </div></div>
+            <div class="dl-row">
+                <span class="card-seq">04 / 05 — The Intelligence I</span>
+                <button class="download-btn" onclick="dl('card-4','04-intelligence-1',this)">↓ Download PNG</button>
+            </div>
+        </div>
+
+        <!-- ████  CARD 5 · THE INTELLIGENCE PT 2  ████ -->
+        <div class="card-wrapper">
+            <div class="card-preview"><div class="card" id="card-5">
+                <div class="card-inner">
+                    <div class="card-section-hdr">
+                        <div class="card-hdr-left">
+                            <div class="card-hdr-eyebrow">Data Insights, cont.</div>
+                            <div class="card-hdr-title">The Intelligence</div>
+                        </div>
+                        <img src="../stonewatch_logo_lo_res.png" class="card-hdr-logo" onerror="this.style.display='none'">
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:20px; flex:1">
+                        <div class="sc-fact-card">
+                            <div class="sc-fact-icon">⏰</div>
+                            <div class="sc-fact-content">
+                                <div class="sc-fact-title">Prime Time</div>
+                                <div class="sc-fact-value" id="f2-primetime">—</div>
+                            </div>
+                        </div>
+                        <div class="sc-fact-card">
+                            <div class="sc-fact-icon">👥</div>
+                            <div class="sc-fact-content">
+                                <div class="sc-fact-title">Party Size Edge</div>
+                                <div class="sc-fact-value" id="f2-partysize">—</div>
+                            </div>
+                        </div>
+                        <div class="sc-fact-card">
+                            <div class="sc-fact-icon">💡</div>
+                            <div class="sc-fact-content">
+                                <div class="sc-fact-title">Pro Tip</div>
+                                <div class="sc-fact-value" id="f2-protip">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-bottom">
+                        <div class="card-wm">
+                            <img src="../stonewatch_logo_lo_res.png" class="wm-logo" onerror="this.style.display='none'">
+                            <span class="wm-text">StoneWatch · @stonewatchNYC</span>
+                        </div>
+                    </div>
+                </div>
+            </div></div>
+            <div class="dl-row">
+                <span class="card-seq">05 / 05 — The Intelligence II</span>
+                <button class="download-btn" onclick="dl('card-5','05-intelligence-2',this)">↓ Download PNG</button>
+            </div>
+        </div>
+
+    </div></div>
 
     <div class="page-footer">
-        StoneWatch — Reservation Intelligence for Hillstone NYC &nbsp;·&nbsp; <a href="stonewatch-dashboard.html" style="color: inherit; text-decoration: none;">← Back to Dashboard</a>
+        StoneWatch — Reservation Intelligence for Hillstone NYC &nbsp;·&nbsp;
+        <a href="stonewatch-dashboard.html">← Back to Dashboard</a>
     </div>
-
 </div>
 
 <script>
     const SUPABASE_URL = 'https://vegmyektpcavpuotlspp.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_P-G0Ws_M3zsqb3puemcNuQ_DUm-h6we';
 
-    let allData = [];
-    let filteredData = [];
-    let currentRange = 'all';
+    let allData = [], filteredData = [], currentRange = 'all';
+    let chartHour = null, chartDay = null;
 
-    async function fetchFromSupabase() {
+    // Chart.js defaults (same as main dashboard)
+    Chart.defaults.color = '#a0a0a8';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+    Chart.defaults.font.family = "'Inter', sans-serif";
+
+    async function fetchSupabase() {
         const res = await fetch(
             `${SUPABASE_URL}/rest/v1/unique_slots?select=*&order=seen_at_iso.desc`,
-            {
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Range': '0-49999'
-                }
-            }
+            { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Range': '0-49999' } }
         );
         if (!res.ok) throw new Error('Supabase fetch failed');
         return res.json();
@@ -846,236 +490,215 @@
         return `${h - 12}pm`;
     }
 
-    function expandDay(abbr) {
-        return { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday',
-                 Fri:'Friday', Sat:'Saturday', Sun:'Sunday' }[abbr] || abbr;
+    function calcStats(data) {
+        if (!data.length) return null;
+        const n = data.length;
+        const avgLead = data.reduce((s,d)=>s+(d.lead_hours||0),0) / n;
+
+        const hourCounts = {};
+        data.forEach(d => { if (d.hour_slot != null) hourCounts[d.hour_slot] = (hourCounts[d.hour_slot]||0)+1; });
+        const peakHour = +Object.entries(hourCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || 18;
+
+        const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+        const dayCounts = {};
+        DAYS.forEach(d => dayCounts[d]=0);
+        data.forEach(d => { if (d.weekday_slot) dayCounts[d.weekday_slot]=(dayCounts[d.weekday_slot]||0)+1; });
+        const bestDay = DAYS.map(d=>({d,c:dayCounts[d]})).sort((a,b)=>b.c-a.c)[0]?.d || 'Mon';
+
+        const uniqueDates = new Set(data.map(d=>(d.slot_at_iso||'').split('T')[0]).filter(Boolean)).size;
+
+        const lunch  = data.filter(d=>d.service==='Lunch').length;
+        const dinner = data.filter(d=>d.service==='Dinner').length;
+        const lunchWins = lunch >= dinner;
+        const svcRatio = lunchWins ? (lunch/(dinner||1)).toFixed(1) : (dinner/(lunch||1)).toFixed(1);
+
+        const party2 = data.filter(d=>d.party_size===2).length;
+        const party4 = data.filter(d=>d.party_size===4).length;
+        const party2Ratio = (party2/(party4||1)).toFixed(1);
+
+        const weekendN = (dayCounts['Sat']||0)+(dayCounts['Sun']||0);
+        const weekdayPct = (((n-weekendN)/n)*100).toFixed(0);
+
+        const primeN = [18,19,20,21].reduce((s,h)=>s+(hourCounts[h]||0),0);
+        const primeTimePct = ((primeN/n)*100).toFixed(0);
+
+        // same-day: lead < 12h
+        const leadHourCounts = {};
+        data.forEach(d => {
+            const h = Math.min(Math.floor(d.lead_hours||0), 72);
+            leadHourCounts[h] = (leadHourCounts[h]||0)+1;
+        });
+        const sameDaySlots = Object.entries(leadHourCounts).filter(([h])=>+h<12).reduce((s,[,c])=>s+c,0);
+        const sameDayPct = ((sameDaySlots/n)*100).toFixed(0);
+
+        return { n, avgLead, uniqueDates, peakHour, hourCounts, dayCounts, bestDay,
+                 lunch, dinner, lunchWins, svcRatio,
+                 party2, party4, party2Ratio,
+                 weekdayPct, primeTimePct, sameDayPct, leadHourCounts };
     }
 
     function applyFilters() {
         const now = new Date();
-        filteredData = allData.filter(row => {
-            if (currentRange !== 'all') {
-                const diff = (now - new Date(row.seen_at_iso)) / 86400000;
-                if (diff > parseInt(currentRange)) return false;
-            }
-            return true;
+        filteredData = allData.filter(r => {
+            if (currentRange === 'all') return true;
+            return (now - new Date(r.seen_at_iso)) / 86400000 <= +currentRange;
         });
         updateCards();
     }
 
-    function setTimeRange(range, el) {
+    function setRange(range, el) {
         currentRange = range;
-        document.querySelectorAll('.time-pill').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.time-pill').forEach(p=>p.classList.remove('active'));
         el.classList.add('active');
         applyFilters();
     }
 
-    function calcStats(data) {
-        if (!data.length) return null;
-
-        const n = data.length;
-        const avgLead = data.reduce((s, d) => s + (d.lead_hours || 0), 0) / n;
-
-        const hourCounts = {};
-        data.forEach(d => { const h = d.hour_slot; if (h != null) hourCounts[h] = (hourCounts[h] || 0) + 1; });
-        const peakHour = +Object.entries(hourCounts).sort((a,b) => b[1]-a[1])[0]?.[0] || 18;
-
-        const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-        const dayCounts = {};
-        DAYS.forEach(d => dayCounts[d] = 0);
-        data.forEach(d => { if (d.weekday_slot) dayCounts[d.weekday_slot] = (dayCounts[d.weekday_slot] || 0) + 1; });
-
-        const sortedDays = DAYS.map(d => ({ day: d, count: dayCounts[d] })).sort((a,b) => b.count - a.count);
-        const bestDay = sortedDays[0]?.day || 'Thu';
-
-        const lead_u6   = data.filter(d => (d.lead_hours||0) < 6).length;
-        const lead_6_12 = data.filter(d => (d.lead_hours||0) >= 6  && (d.lead_hours||0) < 12).length;
-        const lead_12_24= data.filter(d => (d.lead_hours||0) >= 12 && (d.lead_hours||0) < 24).length;
-        const lead_24p  = data.filter(d => (d.lead_hours||0) >= 24).length;
-        const lead_u12  = lead_u6 + lead_6_12;
-
-        const primeTime = [18,19,20,21].reduce((s,h) => s + (hourCounts[h]||0), 0);
-
-        const dateCounts = {};
-        data.forEach(d => {
-            const dt = (d.seen_at_iso||'').split('T')[0];
-            if (dt) dateCounts[dt] = (dateCounts[dt]||0) + 1;
-        });
-
-        const weekendN = (dayCounts['Sat']||0) + (dayCounts['Sun']||0);
-
-        return {
-            n, avgLead, peakHour, hourCounts, dayCounts, sortedDays, bestDay,
-            lead_u6, lead_6_12, lead_12_24, lead_24p, lead_u12,
-            primeTime, primeTimePct: ((primeTime/n)*100).toFixed(0),
-            weekdayPct: (((n - weekendN)/n)*100).toFixed(0),
-            dateCounts
-        };
-    }
+    // Inject innerHTML with <strong> tags — same pattern as main dashboard
+    function setHTML(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
 
     function updateCards() {
         const s = calcStats(filteredData);
         if (!s) return;
 
-        // Date range
-        const dates = filteredData.map(d => d.seen_at_iso).filter(Boolean).sort();
-        const d0 = new Date(dates[0]), d1 = new Date(dates[dates.length-1]);
-        const fmt = d => d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
-        document.getElementById('c1-date-range').textContent =
-            `${fmt(d0)} – ${fmt(d1)}, ${d1.getFullYear()}`;
+        // ── Card 1: Stats ──
+        document.getElementById('s1-total').textContent = s.n.toLocaleString();
+        document.getElementById('s1-days').textContent  = s.uniqueDates;
+        document.getElementById('s1-lead').innerHTML    = `${s.avgLead.toFixed(1)}<span class="sc-stat-unit">hrs</span>`;
+        document.getElementById('s1-peak').textContent  = fmtHour(s.peakHour);
 
-        // ── Card 1 ──
-        document.getElementById('c1-total').textContent = s.n.toLocaleString();
-        renderSparkline(s.dateCounts);
+        // ── Cards 2 & 3: Charts ──
+        updateHourChart(s);
+        updateDayChart(s);
 
-        // ── Card 2 ──
-        document.getElementById('c2-peak').textContent = fmtHour(s.peakHour);
-        renderHourStrip(s.hourCounts, s.peakHour);
-        document.getElementById('c2-insight').textContent =
-            `"${s.primeTimePct}% of slots fall in the 6–9 PM prime window. Off-peak hours are your best edge."`;
+        // ── Card 4: Fast facts pt 1 ──
+        const svcWinner = s.lunchWins ? 'Lunch' : 'Dinner';
+        const svcLoser  = s.lunchWins ? 'Dinner' : 'Lunch';
+        setHTML('f1-besttime',
+            `<strong>${s.sameDayPct}%</strong> of slots appear within 12 hours. Check frequently for same-day cancellations.`);
+        setHTML('f1-daystrat',
+            `<strong>${s.bestDay}</strong> has the most slots. <strong>${s.weekdayPct}%</strong> of availability is on weekdays vs weekends.`);
+        setHTML('f1-service',
+            `<strong>${svcWinner}</strong> has ${s.svcRatio}x more availability. ${s.lunchWins ? 'Consider a late lunch for easier booking.' : 'Dinner slots are surprisingly accessible.'}`);
 
-        // ── Card 3 ──
-        document.getElementById('c3-best-day').textContent = expandDay(s.bestDay);
-        renderDayBars(s.dayCounts, s.bestDay, s.n);
-        document.getElementById('c3-weekday-stat').innerHTML =
-            `<strong>${s.weekdayPct}%</strong> of all slots are on weekdays`;
-
-        // ── Card 4 ──
-        const w12Pct = ((s.lead_u12 / s.n) * 100).toFixed(0);
-        document.getElementById('c4-pct').textContent = `${w12Pct}%`;
-        renderLeadBars(s);
-        const avgStr = s.avgLead.toFixed(1);
-        document.getElementById('c4-tip').textContent =
-            `"Average lead time is ${avgStr}h. ${parseFloat(avgStr) < 24
-                ? 'Check frequently — same-day cancellations are the norm.'
-                : 'Slots tend to open 1–2 days out. Plan accordingly.'}"`;
-
-        // ── Card 5 ──
-        renderPlaybook(s, w12Pct);
+        // ── Card 5: Fast facts pt 2 ──
+        const biggerParty = s.party2 > s.party4 ? '2' : '4';
+        const partyRatio  = s.party2 > s.party4
+            ? (s.party2/(s.party4||1)).toFixed(1)
+            : (s.party4/(s.party2||1)).toFixed(1);
+        setHTML('f2-primetime',
+            `Only <strong>${s.primeTimePct}%</strong> of slots are 6–9pm prime time. Off-peak hours give you a major advantage.`);
+        setHTML('f2-partysize',
+            `Tables for <strong>${biggerParty}</strong> are ${partyRatio}x more common. ${s.party2 > s.party4 ? 'Intimate dinners are easier to book.' : 'Group reservations have good availability.'}`);
+        setHTML('f2-protip',
+            `Average lead time is <strong>${s.avgLead.toFixed(1)}h</strong>. Most slots appear ${s.avgLead < 24 ? 'same-day' : '1–2 days out'}—set your alerts accordingly.`);
     }
 
-    function renderSparkline(dateCounts) {
-        const bars = [];
-        const now = new Date();
-        for (let i = 13; i >= 0; i--) {
-            const d = new Date(now);
-            d.setDate(d.getDate() - i);
-            const key = d.toISOString().split('T')[0];
-            bars.push({ key, count: dateCounts[key] || 0 });
+    function chartTooltipDefaults() {
+        return {
+            backgroundColor: '#1a1a24',
+            titleColor: '#f5f5f7',
+            bodyColor: '#a0a0a8',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            cornerRadius: 8,
+            padding: 12,
+        };
+    }
+
+    function updateHourChart(s) {
+        const labels = [], data = [];
+        for (let h = 11; h <= 21; h++) {
+            labels.push(fmtHour(h));
+            data.push(s.hourCounts?.[h] || 0);
         }
-        const max = Math.max(...bars.map(b => b.count), 1);
-        const container = document.getElementById('c1-sparkline');
-        container.innerHTML = bars.map(b => {
-            const h = Math.max((b.count / max) * 100, 4).toFixed(0);
-            return `<div class="spark-bar${b.count > 0 ? ' lit' : ''}" style="height:${h}%"></div>`;
-        }).join('');
-        const fmt = k => new Date(k + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' });
-        const datesEl = document.getElementById('c1-spark-dates');
-        datesEl.innerHTML = `<span>${fmt(bars[0].key)}</span><span>${fmt(bars[bars.length-1].key)}</span>`;
-    }
-
-    function renderHourStrip(hourCounts, peakHour) {
-        const hours = [11,12,13,14,15,16,17,18,19,20,21];
-        const max = Math.max(...hours.map(h => hourCounts[h]||0), 1);
-        const stripEl = document.getElementById('c2-hour-strip');
-        const labelsEl = document.getElementById('c2-hour-labels');
-
-        stripEl.innerHTML = hours.map(h => {
-            const cnt = hourCounts[h] || 0;
-            const intensity = cnt / max;
-            const isPeak = h === peakHour;
-            const isPrime = h >= 18 && h <= 21;
-            let bg;
-            if (isPeak)       bg = `rgba(201,169,98,${0.35 + intensity * 0.65})`;
-            else if (isPrime) bg = `rgba(201,169,98,${0.08 + intensity * 0.35})`;
-            else              bg = `rgba(74,157,124,${0.08 + intensity * 0.35})`;
-            const border = isPeak ? '2px solid rgba(201,169,98,0.7)' : '1px solid rgba(255,255,255,0.04)';
-            return `<div class="hour-cell" style="background:${bg}; border:${border}"></div>`;
-        }).join('');
-
-        labelsEl.innerHTML = hours.map(h => {
-            const isPeak = h === peakHour;
-            return `<div class="hour-lbl-item" style="color:${isPeak ? '#c9a962' : '#6b6b75'}; font-weight:${isPeak ? 600 : 400}">${fmtHour(h)}</div>`;
-        }).join('');
-    }
-
-    function renderDayBars(dayCounts, bestDay, total) {
-        const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-        const counts = DAYS.map(d => dayCounts[d] || 0);
-        const max = Math.max(...counts, 1);
-        document.getElementById('c3-bars').innerHTML = DAYS.map((d, i) => {
-            const cnt = counts[i];
-            const pct = ((cnt / total) * 100).toFixed(0);
-            const w = ((cnt / max) * 100).toFixed(1);
-            const isBest = d === bestDay;
-            return `<div class="day-row">
-                <div class="day-name${isBest ? ' best' : ''}">${d}</div>
-                <div class="day-track"><div class="day-fill${isBest ? ' best' : ''}" style="width:${w}%"></div></div>
-                <div class="day-pct${isBest ? ' best' : ''}">${pct}%</div>
-            </div>`;
-        }).join('');
-    }
-
-    function renderLeadBars(s) {
-        const buckets = [
-            { lbl: '< 6h',    cnt: s.lead_u6,    color: '#b4516d' },
-            { lbl: '6 – 12h', cnt: s.lead_6_12,  color: '#c9a962' },
-            { lbl: '12 – 24h',cnt: s.lead_12_24, color: '#4a9d7c' },
-            { lbl: '24h +',   cnt: s.lead_24p,   color: 'rgba(255,255,255,0.22)' },
-        ];
-        const max = Math.max(...buckets.map(b => b.cnt), 1);
-        document.getElementById('c4-lead').innerHTML = buckets.map(b => {
-            const pct = ((b.cnt / s.n) * 100).toFixed(0);
-            const w = ((b.cnt / max) * 100).toFixed(1);
-            return `<div class="lead-row">
-                <div class="lead-lbl">${b.lbl}</div>
-                <div class="lead-track"><div class="lead-fill" style="width:${w}%; background:${b.color}; opacity:0.75"></div></div>
-                <div class="lead-pct" style="color:${b.color}">${pct}%</div>
-            </div>`;
-        }).join('');
-    }
-
-    function renderPlaybook(s, w12Pct) {
-        const tips = [
-            {
-                num: '01',
-                title: `Check around ${fmtHour(s.peakHour)}`,
-                desc: `Peak hour for new slots appearing. Set a daily reminder and be ready to book fast.`,
+        if (chartHour) {
+            chartHour.data.labels = labels;
+            chartHour.data.datasets[0].data = data;
+            chartHour.update('none');
+            return;
+        }
+        const ctx = document.getElementById('card2-chart');
+        chartHour = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: 'rgba(201,169,98,0.6)',
+                    borderColor: 'rgba(201,169,98,1)',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                }]
             },
-            {
-                num: '02',
-                title: `Target ${expandDay(s.bestDay)}s`,
-                desc: `${expandDay(s.bestDay)} consistently has the most availability. Focus your search there.`,
-            },
-            {
-                num: '03',
-                title: `Act within 12 hours`,
-                desc: `${w12Pct}% of slots appear and disappear same-day. Speed wins — don't wait.`,
-            },
-        ];
-        document.getElementById('c5-tips').innerHTML = tips.map(t => `
-            <div class="tip-item">
-                <div class="tip-num">${t.num}</div>
-                <div class="tip-body">
-                    <div class="tip-title">${t.title}</div>
-                    <div class="tip-desc">${t.desc}</div>
-                </div>
-            </div>`).join('');
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                devicePixelRatio: 1,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { ...chartTooltipDefaults(), callbacks: { label: ctx => `${ctx.raw} slots` } }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 22 }, color: '#a0a0a8' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { font: { size: 20 }, color: '#a0a0a8' } }
+                }
+            }
+        });
     }
 
-    async function downloadCard(cardId, filename, btn) {
+    function updateDayChart(s) {
+        const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+        const data = days.map(d => s.dayCounts?.[d] || 0);
+        const bgColors = data.map((_,i) => i >= 5 ? 'rgba(180,81,109,0.6)' : 'rgba(74,157,124,0.6)');
+        const bdColors = data.map((_,i) => i >= 5 ? 'rgba(180,81,109,1)' : 'rgba(74,157,124,1)');
+
+        if (chartDay) {
+            chartDay.data.datasets[0].data = data;
+            chartDay.data.datasets[0].backgroundColor = bgColors;
+            chartDay.data.datasets[0].borderColor = bdColors;
+            chartDay.update('none');
+            return;
+        }
+        const ctx = document.getElementById('card3-chart');
+        chartDay = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: days,
+                datasets: [{
+                    data,
+                    backgroundColor: bgColors,
+                    borderColor: bdColors,
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                devicePixelRatio: 1,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { ...chartTooltipDefaults(), callbacks: { label: ctx => `${ctx.raw} slots` } }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 24 }, color: '#a0a0a8' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { font: { size: 20 }, color: '#a0a0a8' } }
+                }
+            }
+        });
+    }
+
+    async function dl(cardId, filename, btn) {
         btn.textContent = 'Capturing…';
         btn.disabled = true;
         try {
             const card = document.getElementById(cardId);
             const canvas = await html2canvas(card, {
-                width: 1080,
-                height: 1080,
-                scale: 2,
-                useCORS: true,
-                allowTaint: false,
-                backgroundColor: '#0a0a0f',
-                logging: false,
+                width: 1080, height: 1080, scale: 2,
+                useCORS: true, allowTaint: false,
+                backgroundColor: '#0a0a0f', logging: false,
                 onclone: (_doc, el) => {
                     el.style.transform = 'none';
                     el.style.position = 'static';
@@ -1084,12 +707,12 @@
                 }
             });
             const a = document.createElement('a');
-            a.download = `${filename}.png`;
+            a.download = `stonewatch-${filename}.png`;
             a.href = canvas.toDataURL('image/png');
             a.click();
         } catch (err) {
             console.error(err);
-            alert('Download failed — try right-clicking the card to save as image.');
+            alert('Download failed — try right-clicking to save.');
         } finally {
             btn.textContent = '↓ Download PNG';
             btn.disabled = false;
@@ -1098,14 +721,13 @@
 
     async function init() {
         try {
-            const raw = await fetchFromSupabase();
+            const raw = await fetchSupabase();
             const seen = new Set();
             allData = raw.filter(r => {
                 if (!r.slot_at_iso || !r.service) return false;
-                const key = `${r.slot_at_iso}-${r.party_size}-${r.service}`;
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
+                const k = `${r.slot_at_iso}-${r.party_size}-${r.service}`;
+                if (seen.has(k)) return false;
+                seen.add(k); return true;
             });
             filteredData = [...allData];
             document.getElementById('loadingState').style.display = 'none';
@@ -1113,8 +735,8 @@
             updateCards();
         } catch (err) {
             document.getElementById('loadingState').innerHTML = `
-                <div style="text-align:center; color:var(--text-dim)">
-                    <div style="font-size:2rem; margin-bottom:1rem">⚠️</div>
+                <div style="text-align:center;color:var(--text-dim)">
+                    <div style="font-size:2rem;margin-bottom:1rem">⚠️</div>
                     <div>${err.message}</div>
                 </div>`;
         }

@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>StoneWatch Status</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --bg-card-hover: #22222e;
+            --accent-gold: #c9a962;
+            --accent-gold-dim: rgba(201, 169, 98, 0.15);
+            --accent-rose: #b4516d;
+            --accent-emerald: #4a9d7c;
+            --accent-blue: #5b8def;
+            --text-primary: #f5f5f7;
+            --text-secondary: #a0a0a8;
+            --text-dim: #6b6b75;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --gradient-gold: linear-gradient(135deg, #c9a962 0%, #a88b4a 100%);
+            --gradient-card: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
+            --shadow-glow: 0 0 60px rgba(201, 169, 98, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Password Screen */
+        .password-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 2rem;
+        }
+
+        .password-screen.hidden { display: none; }
+
+        .password-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .password-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.75rem;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .password-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+        }
+
+        .password-input {
+            width: 100%;
+            max-width: 280px;
+            padding: 1rem 1.25rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            text-align: center;
+            letter-spacing: 0.1em;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .password-input:focus { border-color: var(--accent-gold); }
+        .password-input::placeholder { color: var(--text-dim); letter-spacing: normal; }
+
+        .password-error {
+            color: var(--accent-rose);
+            font-size: 0.8rem;
+            margin-top: 1rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .password-error.show { opacity: 1; }
+
+        /* Ambient background */
+        .ambient-bg {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(201, 169, 98, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(180, 81, 109, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .main-content { display: none; }
+        .main-content.visible { display: block; }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 100%;
+            padding: 1rem;
+            padding-bottom: 5rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 2rem 0 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .logo-container { margin-bottom: 1rem; }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            object-fit: cover;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .header .subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        /* Sticky Header */
+        .sticky-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .sticky-header.visible { transform: translateY(0); }
+
+        .sticky-header .sticky-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+        }
+
+        .sticky-header .sticky-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.125rem;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Status Banner */
+        .status-banner {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            margin-bottom: 1.25rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-dot.healthy {
+            background: var(--accent-emerald);
+            box-shadow: 0 0 8px rgba(74, 157, 124, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-dot.warning {
+            background: var(--accent-gold);
+            box-shadow: 0 0 8px rgba(201, 169, 98, 0.5);
+        }
+
+        .status-dot.error {
+            background: var(--accent-rose);
+            box-shadow: 0 0 8px rgba(180, 81, 109, 0.5);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-info { flex: 1; }
+
+        .status-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .status-value {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .status-meta {
+            text-align: right;
+        }
+
+        .status-meta .meta-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            background-image: var(--gradient-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card.highlight {
+            border-color: rgba(201, 169, 98, 0.3);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.35rem;
+        }
+
+        .stat-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .stat-card.highlight .stat-value { color: var(--accent-gold); }
+
+        .stat-unit {
+            font-size: 0.75rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            color: var(--text-secondary);
+            margin-left: 0.2rem;
+        }
+
+        /* Sparkline */
+        .sparkline-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .sparkline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.75rem;
+        }
+
+        .sparkline-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .sparkline-subtitle {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        .sparkline-canvas {
+            width: 100%;
+            height: 60px;
+        }
+
+        /* Type Filter */
+        .type-filter {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+            justify-content: center;
+        }
+
+        .type-btn {
+            padding: 0.5rem 1.25rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 100px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .type-btn:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .type-btn.active {
+            background: var(--accent-gold-dim);
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        /* Run Log */
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .run-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .run-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .run-card:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .run-card.has-notifications {
+            border-left: 3px solid var(--accent-emerald);
+        }
+
+        .run-card.has-errors {
+            border-left: 3px solid var(--accent-rose);
+        }
+
+        .run-summary {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .run-type-badge {
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .run-type-badge.base {
+            background: rgba(91, 141, 239, 0.15);
+            color: var(--accent-blue);
+        }
+
+        .run-type-badge.vip {
+            background: rgba(201, 169, 98, 0.15);
+            color: var(--accent-gold);
+        }
+
+        .run-time {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .run-time-primary {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .run-time-secondary {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .run-counts {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .run-count-pill {
+            font-size: 0.7rem;
+            font-weight: 500;
+            padding: 0.15rem 0.5rem;
+            border-radius: 100px;
+            white-space: nowrap;
+        }
+
+        .pill-found {
+            background: rgba(74, 157, 124, 0.15);
+            color: var(--accent-emerald);
+        }
+
+        .pill-suppressed {
+            background: rgba(160, 160, 168, 0.1);
+            color: var(--text-dim);
+        }
+
+        .pill-notified {
+            background: rgba(201, 169, 98, 0.15);
+            color: var(--accent-gold);
+        }
+
+        .run-chevron {
+            color: var(--text-dim);
+            transition: transform 0.2s;
+            flex-shrink: 0;
+            font-size: 0.75rem;
+        }
+
+        .run-card.expanded .run-chevron {
+            transform: rotate(90deg);
+        }
+
+        /* Run Detail (expandable) */
+        .run-detail {
+            display: none;
+            border-top: 1px solid var(--border-subtle);
+            padding: 0.875rem 1rem;
+            background: var(--bg-secondary);
+        }
+
+        .run-card.expanded .run-detail {
+            display: block;
+        }
+
+        .run-config {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .config-tag {
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 0.2rem 0.5rem;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 4px;
+            color: var(--text-dim);
+        }
+
+        .event-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .event-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0;
+            font-size: 0.8rem;
+        }
+
+        .event-action {
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            flex-shrink: 0;
+            min-width: 62px;
+            text-align: center;
+        }
+
+        .event-action.notified {
+            background: rgba(74, 157, 124, 0.2);
+            color: var(--accent-emerald);
+        }
+
+        .event-action.suppressed {
+            background: rgba(160, 160, 168, 0.1);
+            color: var(--text-dim);
+        }
+
+        .event-slot {
+            flex: 1;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .event-reason {
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-dim);
+            flex-shrink: 0;
+        }
+
+        .no-events {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            font-style: italic;
+            padding: 0.5rem 0;
+        }
+
+        .github-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.7rem;
+            color: var(--accent-blue);
+            text-decoration: none;
+            margin-top: 0.5rem;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .github-link:hover { opacity: 1; }
+
+        /* Load More */
+        .load-more-btn {
+            display: block;
+            width: 100%;
+            padding: 0.875rem;
+            margin-top: 0.75rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .load-more-btn:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-dim);
+        }
+
+        .empty-state-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state-text {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state-hint {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        /* Sticky Footer */
+        .sticky-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-subtle);
+            padding: 0.875rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0;
+        }
+
+        .footer-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+            padding: 0 1rem;
+        }
+
+        .footer-link:hover { color: var(--accent-gold); }
+
+        .footer-link svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .footer-divider {
+            width: 1px;
+            height: 16px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 50vh;
+            gap: 1rem;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-subtle);
+            border-top-color: var(--accent-gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-text {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+
+        /* Responsive */
+        @media (min-width: 640px) {
+            .container {
+                max-width: 700px;
+                margin: 0 auto;
+                padding: 2rem;
+                padding-bottom: 5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .header h1 { font-size: 2.5rem; }
+        }
+
+        @media (min-width: 1024px) {
+            .container { max-width: 900px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Password Screen -->
+    <div class="password-screen" id="passwordScreen">
+        <img src="../stonewatch_logo_lo_res.png" alt="StoneWatch" class="password-logo" onerror="this.style.display='none'">
+        <h1 class="password-title">StoneWatch</h1>
+        <p class="password-subtitle">Enter password to continue</p>
+        <input type="password" class="password-input" id="passwordInput" placeholder="Password" autocomplete="off">
+        <p class="password-error" id="passwordError">Incorrect password</p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="ambient-bg"></div>
+
+        <!-- Sticky Header -->
+        <div class="sticky-header" id="stickyHeader">
+            <img src="../stonewatch_logo_lo_res.png" alt="StoneWatch" class="sticky-logo" onerror="this.style.display='none'">
+            <span class="sticky-title">StoneWatch</span>
+        </div>
+
+        <div class="container" id="app">
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Loading run data...</div>
+            </div>
+        </div>
+
+        <!-- Sticky Footer -->
+        <div class="sticky-footer">
+            <a href="stonewatch-dashboard.html" class="footer-link">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                Analytics
+            </a>
+            <div class="footer-divider"></div>
+            <a href="https://x.com/stonewatchNYC" target="_blank" rel="noopener" class="footer-link">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                @stonewatchNYC
+            </a>
+            <div class="footer-divider"></div>
+            <a href="social-cards.html" class="footer-link">
+                <svg viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px">
+                    <rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" opacity="0.6"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1" fill="currentColor" opacity="0.8"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1" fill="currentColor" opacity="0.8"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" opacity="0.6"/>
+                </svg>
+                Social
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // ─── Password ───────────────────────────────────────
+        const CORRECT_PASSWORD = 'martiniswap';
+        const passwordScreen = document.getElementById('passwordScreen');
+        const passwordInput = document.getElementById('passwordInput');
+        const passwordError = document.getElementById('passwordError');
+        const mainContent = document.getElementById('mainContent');
+
+        if (sessionStorage.getItem('sw_auth') === 'true') {
+            passwordScreen.classList.add('hidden');
+            mainContent.classList.add('visible');
+            initApp();
+        } else {
+            passwordInput.focus();
+        }
+
+        passwordInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (passwordInput.value === CORRECT_PASSWORD) {
+                    sessionStorage.setItem('sw_auth', 'true');
+                    passwordScreen.classList.add('hidden');
+                    mainContent.classList.add('visible');
+                    initApp();
+                } else {
+                    passwordError.classList.add('show');
+                    passwordInput.value = '';
+                    setTimeout(() => passwordError.classList.remove('show'), 2000);
+                }
+            }
+        });
+
+        // ─── Supabase Config ─────────────────────────────────
+        const SUPABASE_URL = 'https://vegmyektpcavpuotlspp.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_P-G0Ws_M3zsqb3puemcNuQ_DUm-h6we';
+
+        const supaHeaders = {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+        };
+
+        // ─── State ───────────────────────────────────────────
+        let allRuns = [];
+        let allEvents = {};   // run_id -> [events]
+        let filterType = 'all';
+        let displayedCount = 30;
+        const BATCH_SIZE = 30;
+
+        // ─── Data Fetching ───────────────────────────────────
+        async function fetchRuns() {
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/watcher_runs?select=*&order=started_at.desc&limit=200`,
+                { headers: { ...supaHeaders, 'Range': '0-199' } }
+            );
+            if (!res.ok) throw new Error('Failed to fetch runs');
+            return res.json();
+        }
+
+        async function fetchEventsForRun(runId) {
+            if (allEvents[runId]) return allEvents[runId];
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/run_events?run_id=eq.${runId}&order=created_at.asc&limit=500`,
+                { headers: supaHeaders }
+            );
+            if (!res.ok) return [];
+            const events = await res.json();
+            allEvents[runId] = events;
+            return events;
+        }
+
+        // ─── Helpers ─────────────────────────────────────────
+        function timeAgo(dateStr) {
+            const now = new Date();
+            const d = new Date(dateStr);
+            const diffMs = now - d;
+            const mins = Math.floor(diffMs / 60000);
+            if (mins < 1) return 'just now';
+            if (mins < 60) return `${mins}m ago`;
+            const hours = Math.floor(mins / 60);
+            if (hours < 24) return `${hours}h ago`;
+            const days = Math.floor(hours / 24);
+            return `${days}d ago`;
+        }
+
+        function formatTime(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+
+        function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function formatDuration(startStr, endStr) {
+            if (!endStr) return 'running...';
+            const ms = new Date(endStr) - new Date(startStr);
+            const secs = Math.round(ms / 1000);
+            if (secs < 60) return `${secs}s`;
+            return `${Math.floor(secs / 60)}m ${secs % 60}s`;
+        }
+
+        function filteredRuns() {
+            if (filterType === 'all') return allRuns;
+            return allRuns.filter(r => r.run_type === filterType);
+        }
+
+        // ─── Computed Stats ──────────────────────────────────
+        function computeStats(runs) {
+            const last24h = runs.filter(r => (Date.now() - new Date(r.started_at)) < 86400000);
+            const totalNotifications = last24h.reduce((s, r) => s + (r.notifications_sent || 0), 0);
+            const totalFound = last24h.reduce((s, r) => s + (r.slots_found || 0), 0);
+            const totalSuppressed = last24h.reduce((s, r) => s + (r.slots_suppressed || 0), 0);
+            const totalChecked = last24h.reduce((s, r) => s + (r.slots_checked || 0), 0);
+            return {
+                runs24h: last24h.length,
+                notifications24h: totalNotifications,
+                found24h: totalFound,
+                suppressed24h: totalSuppressed,
+                checked24h: totalChecked,
+            };
+        }
+
+        function getSystemStatus(runs) {
+            if (runs.length === 0) return { status: 'warning', label: 'No data yet', detail: '' };
+            const latest = runs[0];
+            const minsAgo = Math.floor((Date.now() - new Date(latest.started_at)) / 60000);
+
+            if (latest.status === 'error') {
+                return { status: 'error', label: 'Last run failed', detail: timeAgo(latest.started_at) };
+            }
+            if (minsAgo > 30) {
+                return { status: 'warning', label: 'No recent runs', detail: `Last: ${timeAgo(latest.started_at)}` };
+            }
+            return { status: 'healthy', label: 'System operational', detail: `Last run ${timeAgo(latest.started_at)}` };
+        }
+
+        // ─── Sparkline ──────────────────────────────────────
+        function drawSparkline(canvas, runs) {
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            const W = rect.width;
+            const H = rect.height;
+
+            // Bucket into 1-hour slots for last 48h
+            const now = Date.now();
+            const hours = 48;
+            const buckets = new Array(hours).fill(0);
+            const notifBuckets = new Array(hours).fill(0);
+
+            runs.forEach(r => {
+                const hoursAgo = (now - new Date(r.started_at)) / 3600000;
+                if (hoursAgo < hours) {
+                    const idx = Math.floor(hoursAgo);
+                    buckets[hours - 1 - idx]++;
+                    notifBuckets[hours - 1 - idx] += (r.notifications_sent || 0);
+                }
+            });
+
+            const maxVal = Math.max(...buckets, 1);
+            const barW = (W - 2) / hours;
+
+            // Draw run bars
+            buckets.forEach((v, i) => {
+                const x = 1 + i * barW;
+                const h = (v / maxVal) * (H - 4);
+                ctx.fillStyle = 'rgba(91, 141, 239, 0.3)';
+                ctx.fillRect(x, H - 2 - h, Math.max(barW - 1, 1), h);
+            });
+
+            // Overlay notification dots
+            notifBuckets.forEach((v, i) => {
+                if (v > 0) {
+                    const x = 1 + i * barW + barW / 2;
+                    const h = (buckets[i] / maxVal) * (H - 4);
+                    ctx.fillStyle = 'rgba(201, 169, 98, 0.9)';
+                    ctx.beginPath();
+                    ctx.arc(x, H - 2 - h - 3, 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
+
+        // ─── Render ──────────────────────────────────────────
+        function render() {
+            const runs = filteredRuns();
+            const stats = computeStats(runs);
+            const sysStatus = getSystemStatus(runs);
+            const app = document.getElementById('app');
+
+            const visibleRuns = runs.slice(0, displayedCount);
+            const hasMore = runs.length > displayedCount;
+
+            app.innerHTML = `
+                <header class="header animate-in">
+                    <div class="logo-container">
+                        <img src="../stonewatch_logo_lo_res.png" alt="StoneWatch" class="logo" onerror="this.style.display='none'">
+                    </div>
+                    <h1>StoneWatch</h1>
+                    <p class="subtitle">System Status</p>
+                </header>
+
+                <!-- Status Banner -->
+                <div class="status-banner animate-in delay-1">
+                    <div class="status-dot ${sysStatus.status}"></div>
+                    <div class="status-info">
+                        <div class="status-label">System</div>
+                        <div class="status-value">${sysStatus.label}</div>
+                    </div>
+                    <div class="status-meta">
+                        <div class="meta-value">${sysStatus.detail}</div>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-grid animate-in delay-1">
+                    <div class="stat-card highlight">
+                        <div class="stat-label">Runs (24h)</div>
+                        <div class="stat-value">${stats.runs24h}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Alerts Sent</div>
+                        <div class="stat-value">${stats.notifications24h}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Slots Found</div>
+                        <div class="stat-value">${stats.found24h}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Suppressed</div>
+                        <div class="stat-value">${stats.suppressed24h}</div>
+                    </div>
+                </div>
+
+                <!-- Sparkline -->
+                <div class="sparkline-section animate-in delay-2">
+                    <div class="sparkline-header">
+                        <span class="sparkline-title">Activity (48h)</span>
+                        <span class="sparkline-subtitle">Runs per hour &middot; gold dots = alerts</span>
+                    </div>
+                    <canvas class="sparkline-canvas" id="sparkline"></canvas>
+                </div>
+
+                <!-- Type Filter -->
+                <div class="type-filter animate-in delay-2">
+                    <button class="type-btn ${filterType === 'all' ? 'active' : ''}" onclick="setFilter('all')">All Runs</button>
+                    <button class="type-btn ${filterType === 'base' ? 'active' : ''}" onclick="setFilter('base')">Base</button>
+                    <button class="type-btn ${filterType === 'vip' ? 'active' : ''}" onclick="setFilter('vip')">VIP</button>
+                </div>
+
+                <!-- Run Log -->
+                <div class="animate-in delay-3">
+                    <div class="section-title">Run Log</div>
+                    ${visibleRuns.length === 0 ? renderEmptyState() : ''}
+                    <div class="run-list" id="runList">
+                        ${visibleRuns.map(r => renderRunCard(r)).join('')}
+                    </div>
+                    ${hasMore ? `<button class="load-more-btn" onclick="loadMore()">Show more (${runs.length - displayedCount} remaining)</button>` : ''}
+                </div>
+            `;
+
+            // Draw sparkline
+            const sparkCanvas = document.getElementById('sparkline');
+            if (sparkCanvas) drawSparkline(sparkCanvas, runs);
+
+            setupStickyHeader();
+        }
+
+        function renderEmptyState() {
+            return `
+                <div class="empty-state">
+                    <div class="empty-state-icon">&#x1f4e1;</div>
+                    <div class="empty-state-text">No runs recorded yet</div>
+                    <div class="empty-state-hint">Run data will appear here once the watcher starts logging to Supabase.<br>Make sure supabase_schema_runs.sql has been applied.</div>
+                </div>
+            `;
+        }
+
+        function renderRunCard(run) {
+            const hasNotif = (run.notifications_sent || 0) > 0;
+            const hasErr = run.status === 'error';
+            const cls = hasErr ? 'has-errors' : hasNotif ? 'has-notifications' : '';
+
+            const found = run.slots_found || 0;
+            const suppressed = run.slots_suppressed || 0;
+            const notified = run.notifications_sent || 0;
+
+            return `
+                <div class="run-card ${cls}" id="run-${run.id}" data-run-id="${run.id}">
+                    <div class="run-summary" onclick="toggleRun('${run.id}')">
+                        <span class="run-type-badge ${run.run_type}">${run.run_type}</span>
+                        <div class="run-time">
+                            <div class="run-time-primary">${formatDate(run.started_at)} ${formatTime(run.started_at)}</div>
+                            <div class="run-time-secondary">${formatDuration(run.started_at, run.completed_at)} &middot; ${run.slots_checked || 0} checked</div>
+                        </div>
+                        <div class="run-counts">
+                            ${notified > 0 ? `<span class="run-count-pill pill-notified">${notified} sent</span>` : ''}
+                            ${found > 0 && found !== notified ? `<span class="run-count-pill pill-found">${found} found</span>` : ''}
+                            ${suppressed > 0 ? `<span class="run-count-pill pill-suppressed">${suppressed} skip</span>` : ''}
+                        </div>
+                        <span class="run-chevron">&#x25B6;</span>
+                    </div>
+                    <div class="run-detail" id="detail-${run.id}">
+                        <div class="no-events" id="events-loading-${run.id}">Loading events...</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function toggleRun(runId) {
+            const card = document.getElementById(`run-${runId}`);
+            if (!card) return;
+
+            const isExpanded = card.classList.contains('expanded');
+            if (isExpanded) {
+                card.classList.remove('expanded');
+                return;
+            }
+
+            card.classList.add('expanded');
+
+            const detailEl = document.getElementById(`detail-${runId}`);
+            const run = allRuns.find(r => r.id === runId);
+
+            // Fetch events
+            const events = await fetchEventsForRun(runId);
+
+            // Config tags
+            let configHtml = '';
+            if (run.config) {
+                const cfg = typeof run.config === 'string' ? JSON.parse(run.config) : run.config;
+                const tags = [];
+                if (cfg.party_sizes) tags.push(`party: ${Array.isArray(cfg.party_sizes) ? cfg.party_sizes.join(',') : cfg.party_sizes}`);
+                if (cfg.days_ahead) tags.push(`${cfg.days_ahead}d ahead`);
+                if (cfg.renotify_minutes) tags.push(`${cfg.renotify_minutes}m cooldown`);
+                if (cfg.high_vis_window) tags.push(`hv: ${cfg.high_vis_window}`);
+                if (cfg.vip_windows) tags.push('vip windows configured');
+                configHtml = `<div class="run-config">${tags.map(t => `<span class="config-tag">${t}</span>`).join('')}</div>`;
+            }
+
+            // Events
+            let eventsHtml = '';
+            if (events.length === 0) {
+                eventsHtml = '<div class="no-events">No slot events recorded for this run</div>';
+            } else {
+                // Group: notified first, then suppressed
+                const notified = events.filter(e => e.action === 'NOTIFIED');
+                const suppressed = events.filter(e => e.action === 'SUPPRESSED');
+                const sorted = [...notified, ...suppressed];
+
+                eventsHtml = `<div class="event-list">
+                    ${sorted.slice(0, 50).map(e => {
+                        const parts = (e.slot_key || '').split('|');
+                        const slotDisplay = parts.length >= 5
+                            ? `${parts[1]} @ ${parts[2]} for ${parts[3]} (${parts[4]})`
+                            : e.slot_key || 'unknown';
+                        return `<div class="event-row">
+                            <span class="event-action ${e.action === 'NOTIFIED' ? 'notified' : 'suppressed'}">${e.action === 'NOTIFIED' ? 'Sent' : 'Skipped'}</span>
+                            <span class="event-slot">${slotDisplay}</span>
+                            <span class="event-reason">${e.reason || ''}</span>
+                        </div>`;
+                    }).join('')}
+                    ${sorted.length > 50 ? `<div class="no-events">+ ${sorted.length - 50} more events</div>` : ''}
+                </div>`;
+            }
+
+            // GitHub link
+            let ghLink = '';
+            if (run.github_run_url && run.github_run_id) {
+                ghLink = `<a href="${run.github_run_url}" target="_blank" rel="noopener" class="github-link">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                    View in GitHub Actions
+                </a>`;
+            }
+
+            detailEl.innerHTML = configHtml + eventsHtml + ghLink;
+        }
+
+        function setFilter(type) {
+            filterType = type;
+            displayedCount = BATCH_SIZE;
+            render();
+        }
+
+        function loadMore() {
+            displayedCount += BATCH_SIZE;
+            render();
+        }
+
+        // ─── Sticky Header ───────────────────────────────────
+        function setupStickyHeader() {
+            const header = document.querySelector('.header');
+            const sticky = document.getElementById('stickyHeader');
+            if (!header) return;
+
+            const obs = new IntersectionObserver(
+                ([entry]) => sticky.classList.toggle('visible', !entry.isIntersecting),
+                { threshold: 0, rootMargin: '-50px 0px 0px 0px' }
+            );
+            obs.observe(header);
+        }
+
+        // ─── Init ────────────────────────────────────────────
+        async function initApp() {
+            try {
+                allRuns = await fetchRuns();
+                render();
+
+                // Auto-refresh every 60s
+                setInterval(async () => {
+                    try {
+                        allRuns = await fetchRuns();
+                        allEvents = {};  // clear cache
+                        render();
+                    } catch (e) {
+                        console.warn('Auto-refresh failed:', e);
+                    }
+                }, 60000);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('loading').innerHTML = `
+                    <div style="text-align: center; color: var(--text-secondary);">
+                        <div style="font-size: 2rem; margin-bottom: 1rem;">&#x26A0;&#xFE0F;</div>
+                        <div>Unable to load run data</div>
+                        <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-dim);">${error.message}</div>
+                        <div style="font-size: 0.75rem; margin-top: 1rem; color: var(--text-dim);">
+                            Make sure <code>supabase_schema_runs.sql</code> has been applied to your Supabase project.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

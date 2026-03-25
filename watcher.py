@@ -51,6 +51,11 @@ STATE_TTL_DAYS= 5  # keep keys for 5 days, then prune
 SUPABASE_URL = os.getenv("SUPABASE_URL")  # e.g., https://xxxx.supabase.co
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")  # anon/public key
 
+# GitHub Actions metadata (for run tracking)
+GITHUB_RUN_ID  = os.getenv("GITHUB_RUN_ID", "")
+GITHUB_SERVER  = os.getenv("GITHUB_SERVER_URL", "https://github.com")
+GITHUB_REPO    = os.getenv("GITHUB_REPOSITORY", "")
+
 # ---- Constants ----
 NYC = ZoneInfo(TIMEZONE)
 BASE_URL = "https://loyaltyapi.wisely.io/v2/web/reservations/inventory"
@@ -285,6 +290,113 @@ def log_to_supabase(data: dict):
         print(f"⚠️  Supabase insert failed: {e}")
         return False
 
+# ---------- Run tracking (Supabase) ----------
+def create_run_record(run_type="base"):
+    """Create a watcher_runs row at the start of each run. Returns the run UUID or None."""
+    if not (SUPABASE_URL and SUPABASE_KEY):
+        return None
+    github_run_url = f"{GITHUB_SERVER}/{GITHUB_REPO}/actions/runs/{GITHUB_RUN_ID}" if GITHUB_RUN_ID else None
+    config_snapshot = {
+        "party_sizes": PARTY_SIZES,
+        "days_ahead": DAYS_AHEAD,
+        "renotify_minutes": RENOTIFY_MINUTES,
+        "lunch_max_days": LUNCH_MAX_DAYS,
+        "dinner_max_days": DINNER_MAX_DAYS,
+        "daily_cap_lunch": DAILY_CAP_LUNCH,
+        "daily_cap_dinner": DAILY_CAP_DINNER,
+        "high_vis_window": f"{HIGH_VIS_START_TIME}-{HIGH_VIS_END_TIME}",
+        "enable_dinner": ENABLE_DINNER,
+        "enable_lunch": ENABLE_LUNCH,
+    }
+    payload = {
+        "run_type": run_type,
+        "merchant_id": MERCHANT_ID,
+        "restaurant_name": RESTAURANT_NAME,
+        "status": "running",
+        "config": json.dumps(config_snapshot),
+        "github_run_id": GITHUB_RUN_ID or None,
+        "github_run_url": github_run_url,
+    }
+    try:
+        resp = requests.post(
+            f"{SUPABASE_URL}/rest/v1/watcher_runs",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=representation"
+            },
+            json=payload,
+            timeout=10
+        )
+        resp.raise_for_status()
+        rows = resp.json()
+        run_id = rows[0]["id"] if rows else None
+        print(f"📋 Run record created: {run_id}")
+        return run_id
+    except Exception as e:
+        print(f"⚠️  Failed to create run record: {e}")
+        return None
+
+def log_run_event(run_id, slot_key, slot_at_iso, service, party_size, lead_days, action, reason, suppression_type=None):
+    """Log a single slot decision to the run_events table."""
+    if not run_id or not (SUPABASE_URL and SUPABASE_KEY):
+        return
+    payload = {
+        "run_id": run_id,
+        "slot_key": slot_key,
+        "slot_at_iso": slot_at_iso,
+        "service": service,
+        "party_size": party_size,
+        "lead_days": lead_days,
+        "action": action,
+        "reason": reason,
+        "suppression_type": suppression_type,
+    }
+    try:
+        requests.post(
+            f"{SUPABASE_URL}/rest/v1/run_events",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+            },
+            json=payload,
+            timeout=10
+        )
+    except Exception:
+        pass  # non-critical, don't break the run
+
+def complete_run_record(run_id, status="success", slots_checked=0, slots_found=0, notifications_sent=0, slots_suppressed=0, error_message=None):
+    """Update the watcher_runs row with final counts."""
+    if not run_id or not (SUPABASE_URL and SUPABASE_KEY):
+        return
+    payload = {
+        "completed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "status": status,
+        "slots_checked": slots_checked,
+        "slots_found": slots_found,
+        "notifications_sent": notifications_sent,
+        "slots_suppressed": slots_suppressed,
+    }
+    if error_message:
+        payload["error_message"] = error_message
+    try:
+        requests.patch(
+            f"{SUPABASE_URL}/rest/v1/watcher_runs?id=eq.{run_id}",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+            },
+            json=payload,
+            timeout=10
+        )
+    except Exception as e:
+        print(f"⚠️  Failed to complete run record: {e}")
+
 def log_slot_event(slot_dt_nyc, seen_dt_utc, service, party_size, merchant_id="278278", source="wisely"):
     lead = (slot_dt_nyc.astimezone(timezone.utc) - seen_dt_utc).total_seconds() / 60.0
     lead_hours = round(lead / 60.0, 1)
@@ -421,6 +533,10 @@ def run_once():
     grouped_slots = {}  # key: (date_str, time_str, svc_name), value: list of (party, link)
     found_this_run = set()
     present_this_run = set()
+    suppressed_count = 0
+
+    # --- Run tracking ---
+    run_id = create_run_record(run_type="base")
 
     for i in range(DAYS_AHEAD):
         d = today + timedelta(days=i)
@@ -451,10 +567,15 @@ def run_once():
                             # Compute slot datetime + lead days (NYC-local)
                             slot_dt_nyc = compute_slot_dt_nyc(iso, label, dt)
                             lead_days = lead_days_int(slot_dt_nyc)
+                            slot_iso_str = slot_dt_nyc.isoformat(timespec="seconds")
                             # Absolute far-future suppression by meal (even first sighting)
                             if svc_name.lower().startswith("lunch") and lead_days > LUNCH_MAX_DAYS:
+                                suppressed_count += 1
+                                log_run_event(run_id, key, slot_iso_str, svc_name, party, lead_days, "SUPPRESSED", "FAR_FUTURE_LUNCH", "far_future")
                                 continue
                             if svc_name.lower().startswith("dinner") and lead_days > DINNER_MAX_DAYS:
+                                suppressed_count += 1
+                                log_run_event(run_id, key, slot_iso_str, svc_name, party, lead_days, "SUPPRESSED", "FAR_FUTURE_DINNER", "far_future")
                                 continue
 
                             # --- Log every slot found (for data collection) ---
@@ -503,11 +624,15 @@ def run_once():
                                 # Daily cap (only if a cap > 0)
                                 if daily_cap > 0 and last_notified_date == today_str:
                                     print(f"⏭️  SKIP (daily cap): {date_str} @ {time_str} for {party} - already notified today")
+                                    suppressed_count += 1
+                                    log_run_event(run_id, key, slot_iso_str, svc_name, party, lead_days, "SUPPRESSED", "DAILY_CAP", "daily_cap")
                                     continue
-                                    
+
                                 # Guard: inside meal window only
                                 if lead_days > max_days:
                                     print(f"⏭️  SKIP (too far): {date_str} @ {time_str} for {party} - {lead_days} days away")
+                                    suppressed_count += 1
+                                    log_run_event(run_id, key, slot_iso_str, svc_name, party, lead_days, "SUPPRESSED", "TOO_FAR", "far_future")
                                     continue
                             
                                 # Milestones or cooldown
@@ -520,7 +645,11 @@ def run_once():
                             
                             if should_notify:
                                 print(f"✅ NOTIFY ({notify_reason}): {date_str} @ {time_str} for {party}, lead={lead_days}d, last={int((now_ts-last_notified)/60)}min ago")
+                                log_run_event(run_id, key, slot_iso_str, svc_name, party, lead_days, "NOTIFIED", notify_reason)
                             else:
+                                suppressed_count += 1
+                                cooldown_reason = f"COOLDOWN_{int((now_ts - last_notified)/60)}min"
+                                log_run_event(run_id, key, slot_iso_str, svc_name, party, lead_days, "SUPPRESSED", cooldown_reason, "cooldown")
                                 continue
                             
                             # Mark as notified now (persist richer record)
@@ -574,29 +703,37 @@ def run_once():
     print(f"Total slots checked: {len(present_this_run)}")
     print(f"New slots found this run: {len(found_this_run)}")
     print(f"Notifications sent: {len(items)}")
-    
+    print(f"Slots suppressed: {suppressed_count}")
+
     if found_this_run:
         print(f"\n📍 Slots found:")
         for key in sorted(found_this_run):
             parts = key.split("|")
             print(f"  - {parts[1]} @ {parts[2]} for {parts[3]} ({parts[4]})")
-    
+
     if items:
         print(f"\n✉️  Notifications sent:")
         for item in items:
             print(f"  - {item['message']}")
-    
+
     print("="*60 + "\n")
 
-    # Save updated state & notify
-    save_seen(seen)
-    
     # Save updated state & notify
     save_seen(seen)
     if items:
         notify(items)
     else:
         print("No NEW openings this run.")
+
+    # --- Complete run tracking ---
+    complete_run_record(
+        run_id,
+        status="success",
+        slots_checked=len(present_this_run),
+        slots_found=len(found_this_run),
+        notifications_sent=len(items),
+        slots_suppressed=suppressed_count,
+    )
 
 if __name__ == "__main__":
     run_once()

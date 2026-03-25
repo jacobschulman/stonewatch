@@ -3,6 +3,11 @@ import os, time, json, requests, random
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
+# GitHub Actions metadata (for run tracking)
+GITHUB_RUN_ID  = os.getenv("GITHUB_RUN_ID", "")
+GITHUB_SERVER  = os.getenv("GITHUB_SERVER_URL", "https://github.com")
+GITHUB_REPO    = os.getenv("GITHUB_REPOSITORY", "")
+
 # ---- Config via ENV ----
 MERCHANT_ID = os.getenv("MERCHANT_ID", "278278")
 RESTAURANT_NAME = os.getenv("RESTAURANT_NAME", "Hillstone NYC")
@@ -41,6 +46,10 @@ STATE_FILENAME = f"vip_{MERCHANT_ID}.json"
 
 # VIP Windows config
 VIP_WINDOWS_RAW = os.getenv("VIP_WINDOWS", "").strip()
+
+# Supabase (optional - for run tracking)
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 # ---- Constants ----
 NYC = ZoneInfo(TIMEZONE)
@@ -351,6 +360,109 @@ class RateLimiter:
         self.calls = [t for t in self.calls if now - t < 3600]
         return max(0, self.max_per_hour - len(self.calls))
 
+# ---- Run Tracking (Supabase) ----
+def create_run_record():
+    """Create a watcher_runs row at the start of each VIP run."""
+    if not (SUPABASE_URL and SUPABASE_KEY):
+        return None
+    github_run_url = f"{GITHUB_SERVER}/{GITHUB_REPO}/actions/runs/{GITHUB_RUN_ID}" if GITHUB_RUN_ID else None
+    config_snapshot = {
+        "vip_windows": VIP_WINDOWS_RAW,
+        "step_min": STEP_MIN,
+        "max_checks_per_hour": MAX_CHECKS_PER_HOUR,
+        "randomize_delay": RANDOMIZE_DELAY,
+    }
+    payload = {
+        "run_type": "vip",
+        "merchant_id": MERCHANT_ID,
+        "restaurant_name": RESTAURANT_NAME,
+        "status": "running",
+        "config": json.dumps(config_snapshot),
+        "github_run_id": GITHUB_RUN_ID or None,
+        "github_run_url": github_run_url,
+    }
+    try:
+        resp = requests.post(
+            f"{SUPABASE_URL}/rest/v1/watcher_runs",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=representation"
+            },
+            json=payload,
+            timeout=10
+        )
+        resp.raise_for_status()
+        rows = resp.json()
+        run_id = rows[0]["id"] if rows else None
+        print(f"📋 VIP Run record created: {run_id}")
+        return run_id
+    except Exception as e:
+        print(f"⚠️  Failed to create VIP run record: {e}")
+        return None
+
+def log_run_event(run_id, slot_key, slot_at_iso, service, party_size, lead_days, action, reason, suppression_type=None):
+    """Log a single slot decision to the run_events table."""
+    if not run_id or not (SUPABASE_URL and SUPABASE_KEY):
+        return
+    payload = {
+        "run_id": run_id,
+        "slot_key": slot_key,
+        "slot_at_iso": slot_at_iso,
+        "service": service,
+        "party_size": party_size,
+        "lead_days": lead_days,
+        "action": action,
+        "reason": reason,
+        "suppression_type": suppression_type,
+    }
+    try:
+        requests.post(
+            f"{SUPABASE_URL}/rest/v1/run_events",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+            },
+            json=payload,
+            timeout=10
+        )
+    except Exception:
+        pass
+
+def complete_run_record(run_id, status="success", slots_checked=0, slots_found=0, notifications_sent=0, slots_suppressed=0, api_calls_made=0, api_calls_failed=0, error_message=None):
+    """Update the watcher_runs row with final counts."""
+    if not run_id or not (SUPABASE_URL and SUPABASE_KEY):
+        return
+    payload = {
+        "completed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "status": status,
+        "slots_checked": slots_checked,
+        "slots_found": slots_found,
+        "notifications_sent": notifications_sent,
+        "slots_suppressed": slots_suppressed,
+        "api_calls_made": api_calls_made,
+        "api_calls_failed": api_calls_failed,
+    }
+    if error_message:
+        payload["error_message"] = error_message
+    try:
+        requests.patch(
+            f"{SUPABASE_URL}/rest/v1/watcher_runs?id=eq.{run_id}",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+            },
+            json=payload,
+            timeout=10
+        )
+    except Exception as e:
+        print(f"⚠️  Failed to complete VIP run record: {e}")
+
 # ---- Main Logic ----
 def run_vip_watcher():
     print("="*60)
@@ -407,10 +519,14 @@ def run_vip_watcher():
     api_calls_made = 0
     api_calls_failed = 0
     total_slots_checked = 0
+    suppressed_count = 0
     found_this_run = set()  # prevent duplicate notifications in same run
     window_stats = {}  # track slots per window
     service_stats = {}  # track slots per service type (Lunch/Dinner)
     start_time = time.time()
+
+    # --- Run tracking ---
+    run_id = create_run_record()
 
     # Check each active window
     for window in active_windows:
@@ -488,6 +604,9 @@ def run_vip_watcher():
 
                         print(f"🎯 VIP SLOT FOUND: {date_str} @ {time_str} for party {party} ({service_name})")
 
+                        slot_iso_str = slot_dt.isoformat(timespec="seconds")
+                        lead_days = max((slot_dt.date() - datetime.now(NYC).date()).days, 0)
+
                         # Check if we've notified about this recently (within 5 minutes)
                         now_ts = int(time.time())
                         last_notified = state.get(key, {}).get("last_notified", 0)
@@ -497,11 +616,14 @@ def run_vip_watcher():
 
                         if (now_ts - last_notified) < min_gap:
                             print(f"   ⏭️  Recently notified ({int((now_ts-last_notified)/60)} min ago), skipping")
+                            suppressed_count += 1
+                            log_run_event(run_id, key, slot_iso_str, service_name, party, lead_days, "SUPPRESSED", f"COOLDOWN_{int((now_ts-last_notified)/60)}min", "cooldown")
                             continue
 
                         # Mark as notified
                         state[key] = {"last_notified": now_ts}
                         found_this_run.add(key)
+                        log_run_event(run_id, key, slot_iso_str, service_name, party, lead_days, "NOTIFIED", "VIP_ALERT")
 
                         # Build notification
                         candidate_url = f"{LINK_BASE}?reservation_type_id={type_id}&party_size={party}&search_ts={ts_ms}"
@@ -554,6 +676,7 @@ def run_vip_watcher():
     # Results
     print(f"Slots found: {len(found_this_run)}")
     print(f"Notifications sent: {len(notifications)}")
+    print(f"Slots suppressed: {suppressed_count}")
 
     if found_this_run:
         print("\n🎯 VIP Slots Found:")
@@ -572,6 +695,18 @@ def run_vip_watcher():
         notify(notifications)
     else:
         print("ℹ️  No new VIP slots found this run")
+
+    # --- Complete run tracking ---
+    complete_run_record(
+        run_id,
+        status="success",
+        slots_checked=total_slots_checked,
+        slots_found=len(found_this_run),
+        notifications_sent=len(notifications),
+        slots_suppressed=suppressed_count,
+        api_calls_made=api_calls_made,
+        api_calls_failed=api_calls_failed,
+    )
 
 if __name__ == "__main__":
     run_vip_watcher()

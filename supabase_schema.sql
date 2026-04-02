@@ -23,6 +23,7 @@ CREATE INDEX IF NOT EXISTS idx_availability_seen_at ON availability_logs(seen_at
 CREATE INDEX IF NOT EXISTS idx_availability_slot_at ON availability_logs(slot_at_iso);
 CREATE INDEX IF NOT EXISTS idx_availability_service ON availability_logs(service);
 CREATE INDEX IF NOT EXISTS idx_availability_party_size ON availability_logs(party_size);
+CREATE INDEX IF NOT EXISTS idx_availability_dedup ON availability_logs(slot_at_iso, party_size, service, seen_at_iso ASC);
 
 -- Enable Row Level Security
 ALTER TABLE availability_logs ENABLE ROW LEVEL SECURITY;

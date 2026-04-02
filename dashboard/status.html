@@ -808,6 +808,11 @@
         const SUPABASE_URL = 'https://vegmyektpcavpuotlspp.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_P-G0Ws_M3zsqb3puemcNuQ_DUm-h6we';
 
+        const supaHeaders = {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+        };
+
         // ─── Password ───────────────────────────────────────
         const CORRECT_PASSWORD = 'martiniswap';
         const passwordScreen = document.getElementById('passwordScreen');
@@ -837,11 +842,6 @@
                 }
             }
         });
-
-        const supaHeaders = {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-        };
 
         // ─── State ───────────────────────────────────────────
         let allRuns = [];

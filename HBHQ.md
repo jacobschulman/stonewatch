@@ -1,10 +1,12 @@
 ---
 deploy:
-  type: none
+  type: github-actions
+  review_mode: github-actions
+  merge_deploys_prod: true
 actions:
-  staging_label: No deploy
-  ship_label: Merge PR
-  merge_label: Merge PR
+  staging_label: Review PR
+  ship_label: Merge to Main
+  merge_label: Merge to Main
   setup_merge_label: Merge HBHQ.md
   send_back_label: Request changes
 ---
@@ -13,7 +15,7 @@ actions:
 
 Stonewatch is a GitHub Actions based reservation availability monitor. It polls the Wisely API, sends notifications, and writes state/log output through Gist, CSV, Slack, Pushover, X, and optional Supabase integrations.
 
-HBHQ should treat this as a merge-only project. There is no server deploy; GitHub Actions are the runtime.
+Each request should create a branch and PR. HBHQ should treat this as a GitHub Actions runtime project: there is no server deploy command, but merging to `main` changes what scheduled/manual workflows run.
 
 ## Build And Test
 

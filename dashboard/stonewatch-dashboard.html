@@ -729,6 +729,7 @@
         </div>
     </div>
 
+    <script src="data.js"></script>
     <script>
         // Password check
         const CORRECT_PASSWORD = 'martiniswap';
@@ -736,15 +737,6 @@
         const passwordInput = document.getElementById('passwordInput');
         const passwordError = document.getElementById('passwordError');
         const mainContent = document.getElementById('mainContent');
-
-        // Check if already authenticated
-        if (sessionStorage.getItem('sw_auth') === 'true') {
-            passwordScreen.classList.add('hidden');
-            mainContent.classList.add('visible');
-            initApp();
-        } else {
-            passwordInput.focus();
-        }
 
         passwordInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -768,116 +760,26 @@
         let filters = {
             service: 'all',
             partySize: 'all',
-            timeRange: 'all'
+            timeRange: '30'
         };
 
-        // Supabase config (read-only public access)
-        const SUPABASE_URL = 'https://vegmyektpcavpuotlspp.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_P-G0Ws_M3zsqb3puemcNuQ_DUm-h6we';
+        const dataLoader = StoneWatchData.createLoader(Papa.parse);
 
         // Chart.js defaults
         Chart.defaults.color = '#a0a0a8';
         Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.06)';
         Chart.defaults.font.family = "'Inter', sans-serif";
 
-        async function fetchFromSupabase() {
-            // Fetch from the unique_slots view (pre-deduplicated server-side)
-            const response = await fetch(
-                `${SUPABASE_URL}/rest/v1/unique_slots?select=*&order=seen_at_iso.desc`,
-                {
-                    headers: {
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_KEY}`,
-                        'Range': '0-49999'
-                    }
-                }
-            );
-            if (!response.ok) throw new Error('Supabase fetch failed');
-            return await response.json();
-        }
-
-        async function fetchFromCSV() {
-            const paths = [
-                '../availability_log.csv',
-                './availability_log.csv',
-                '/stonewatch/availability_log.csv',
-                'https://raw.githubusercontent.com/jacobschulman/stonewatch/main/availability_log.csv'
-            ];
-
-            for (const path of paths) {
-                try {
-                    const response = await fetch(path);
-                    if (response.ok) {
-                        const csvText = await response.text();
-                        const parsed = Papa.parse(csvText, {
-                            header: true,
-                            skipEmptyLines: true,
-                            dynamicTyping: (field) => {
-                                return !['seen_at_iso', 'slot_at_iso', 'service', 'weekday_slot', 'weekday_seen', 'source'].includes(field);
-                            }
-                        });
-                        return parsed.data.filter(row => row.slot_at_iso && row.service && typeof row.slot_at_iso === 'string');
-                    }
-                } catch (e) {
-                    continue;
-                }
-            }
-            throw new Error('Could not load CSV data');
-        }
-
         async function initApp() {
             try {
-                // Load from BOTH sources and combine
-                let supabaseData = [];
-                let csvData = [];
-
-                // Try Supabase
-                try {
-                    supabaseData = await fetchFromSupabase();
-                    console.log(`✅ Loaded ${supabaseData.length} rows from Supabase`);
-                } catch (e) {
-                    console.log('⚠️ Supabase unavailable');
-                }
-
-                // Also try CSV for historical data
-                try {
-                    csvData = await fetchFromCSV();
-                    console.log(`✅ Loaded ${csvData.length} rows from CSV`);
-                } catch (e) {
-                    console.log('⚠️ CSV unavailable');
-                }
-
-                // Combine both sources and deduplicate
-                // Supabase view is already deduplicated; CSV may have overlapping entries
-                const combinedData = [...supabaseData, ...csvData];
-
-                if (combinedData.length === 0) {
-                    throw new Error('No data available');
-                }
-
-                const seen = new Set();
-                allData = combinedData.filter(row => {
-                    if (!row.slot_at_iso || !row.service) return false;
-                    const key = `${row.slot_at_iso}-${row.party_size}-${row.service}`;
-                    if (seen.has(key)) return false;
-                    seen.add(key);
-                    return true;
-                });
-
-                console.log(`📊 ${allData.length} unique slots (${supabaseData.length} from supabase view + ${csvData.length} csv, after dedup)`);
-
+                allData = await dataLoader.load(filters.timeRange);
                 filteredData = [...allData];
                 render();
                 setupStickyHeader();
             } catch (error) {
                 console.error('Error loading data:', error);
-                document.getElementById('loading').innerHTML = `
-                    <div style="text-align: center; color: var(--text-secondary);">
-                        <div style="font-size: 2rem; margin-bottom: 1rem;">⚠️</div>
-                        <div>Unable to load data</div>
-                        <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-dim);">${error.message}</div>
-                    </div>
-                `;
+                const app = document.getElementById('app');
+                app.innerHTML = '<div class="loading"><div>Unable to load data. Please try again.</div><button onclick="location.reload()">Retry</button></div>';
             }
         }
 
@@ -898,10 +800,10 @@
         }
 
         function calculateStats(data) {
-            if (!data.length) return {};
+            if (!data.length) return { totalSlots: 0, uniqueDates: 0, avgLeadHours: '0', peakHour: '-' };
 
             const totalSlots = data.length;
-            const uniqueDates = new Set(data.map(d => String(d.slot_at_iso || '').split('T')[0]).filter(Boolean)).size;
+            const uniqueDates = new Set(data.map(d => new Date(d.slot_at_iso).toLocaleDateString('en-CA', { timeZone: 'America/New_York' })).filter(Boolean)).size;
             const avgLeadHours = data.reduce((sum, d) => sum + (d.lead_hours || 0), 0) / data.length;
 
             // Hour distribution
@@ -1036,9 +938,11 @@
                     <button class="time-pill" data-range="3" onclick="setTimeRange('3', this)">3 Days</button>
                     <button class="time-pill" data-range="7" onclick="setTimeRange('7', this)">7 Days</button>
                     <button class="time-pill" data-range="14" onclick="setTimeRange('14', this)">14 Days</button>
-                    <button class="time-pill" data-range="30" onclick="setTimeRange('30', this)">30 Days</button>
-                    <button class="time-pill active" data-range="all" onclick="setTimeRange('all', this)">All Time</button>
+                    <button class="time-pill active" data-range="30" onclick="setTimeRange('30', this)">30 Days</button>
+                    <button class="time-pill" data-range="all" onclick="setTimeRange('all', this)">All Time</button>
                 </div>
+
+                <div id="dataLoadStatus" role="status" style="text-align:center;color:var(--text-secondary);font-size:.8rem;margin-bottom:1rem"></div>
 
                 <!-- Controls Bar -->
                 <div class="controls-bar animate-in delay-1">
@@ -1228,11 +1132,25 @@
             }
         }
 
-        function setTimeRange(range, element) {
-            filters.timeRange = range;
-            document.querySelectorAll('.time-pill').forEach(pill => pill.classList.remove('active'));
-            element.classList.add('active');
-            applyFilters();
+        async function setTimeRange(range, element) {
+            const status = document.getElementById('dataLoadStatus');
+            const pills = document.querySelectorAll('.time-pill');
+            pills.forEach(pill => { pill.disabled = true; });
+            status.textContent = 'Loading history…';
+            try {
+                const rows = await dataLoader.load(range);
+                allData = rows;
+                filters.timeRange = range;
+                pills.forEach(pill => pill.classList.remove('active'));
+                element.classList.add('active');
+                applyFilters();
+                status.textContent = '';
+            } catch (error) {
+                console.error(error);
+                status.textContent = 'Could not load that range. Your previous view is unchanged; select the range to retry.';
+            } finally {
+                pills.forEach(pill => { pill.disabled = false; });
+            }
         }
 
         function setFilter(filterName, value, element) {
@@ -1435,8 +1353,8 @@
                 return;
             }
 
-            const minDate = new Date(Math.min(...dates));
-            const maxDate = new Date(Math.max(...dates));
+            const minDate = new Date(dates.reduce((min, date) => Math.min(min, date.getTime()), Infinity));
+            const maxDate = new Date(dates.reduce((max, date) => Math.max(max, date.getTime()), -Infinity));
 
             // Count slots by date
             const dateCounts = {};
@@ -1450,10 +1368,11 @@
             // Build calendar grid (GitHub style: columns are weeks, rows are days)
             // Start from the beginning of the week containing minDate
             const startDate = new Date(minDate);
-            startDate.setDate(startDate.getDate() - startDate.getDay()); // Go to Sunday
+            startDate.setUTCDate(startDate.getUTCDate() - startDate.getUTCDay());
+            startDate.setUTCHours(0, 0, 0, 0); // Go to Sunday
 
             const endDate = new Date(maxDate);
-            endDate.setDate(endDate.getDate() + (6 - endDate.getDay())); // Go to Saturday
+            endDate.setUTCDate(endDate.getUTCDate() + (6 - endDate.getUTCDay())); // Go to Saturday
 
             // Group by weeks
             const weeks = [];
@@ -1472,10 +1391,10 @@
                         date: dateStr,
                         count,
                         level,
-                        month: currentDate.getMonth(),
-                        day: currentDate.getDate()
+                        month: currentDate.getUTCMonth(),
+                        day: currentDate.getUTCDate()
                     });
-                    currentDate.setDate(currentDate.getDate() + 1);
+                    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
                 }
                 weeks.push(week);
             }
@@ -1565,6 +1484,14 @@
             document.getElementById('stat-days').textContent = stats.uniqueDates || '0';
             document.getElementById('stat-lead').innerHTML = `${stats.avgLeadHours || '0'}<span class="stat-unit">hrs</span>`;
             document.getElementById('stat-peak').textContent = stats.peakHour || '-';
+        }
+        // Start only after configuration, state, and chart defaults have initialized.
+        if (sessionStorage.getItem('sw_auth') === 'true') {
+            passwordScreen.classList.add('hidden');
+            mainContent.classList.add('visible');
+            initApp();
+        } else {
+            passwordInput.focus();
         }
     </script>
 </body>

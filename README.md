@@ -36,8 +36,6 @@ Add the following to your repo's **Settings → Secrets and variables → Action
 | `TWITTER_API_SECRET` | No | X/Twitter API secret |
 | `TWITTER_ACCESS_TOKEN` | No | X/Twitter access token |
 | `TWITTER_ACCESS_SECRET` | No | X/Twitter access token secret |
-| `SUPABASE_URL` | No | Supabase project URL (for analytics logging) |
-| `SUPABASE_KEY` | No | Supabase anon/service key |
 
 ### 2. Enable the workflow
 
@@ -96,7 +94,26 @@ See [VIP_WATCHER_GUIDE.md](VIP_WATCHER_GUIDE.md) for full documentation.
 
 ## Analytics Dashboard
 
-`dashboard/stonewatch-dashboard.html` is a standalone HTML file that loads `availability_log.csv` and renders charts and filters for historical availability data. Open it locally in a browser — no server needed.
+The analytics dashboard, social cards, and system status run entirely on GitHub Pages. No Supabase project or paid database is required. `dashboard/stonewatch-dashboard.html` and `dashboard/social-cards.html` read a small index and monthly files under `data/availability/`; `dashboard/status.html` reads `dashboard/base-runs.json` and `dashboard/vip-runs.json`.
+
+For local preview, run `python3 -m http.server 8765` from the repository root and open `http://localhost:8765/dashboard/stonewatch-dashboard.html`.
+
+Each run writes a temporary, ignored `availability_log.csv` buffer. `scripts/publish_availability.py` merges it into `data/availability/YYYY-MM.csv`, partitioned by reservation month in New York time, and then removes the buffer. Only touched months are read and rewritten. Each slot/party/service/merchant keeps its earliest sighting and corresponding lead-time metrics, including when sightings span a month boundary. Older months stay unchanged.
+
+`data/availability/index.json` lists each month's row count, size, content hash, and first/last sighting. Dashboards default to 30 days and load only overlapping months. All Time loads the full history on demand with at most four simultaneous requests; downloaded months are cached for subsequent filter changes. Missing or truncated files produce a retry message instead of silently showing partial totals. Monthly files were approximately 10–130 KB at migration, versus the previous 100 MB monolithic CSV.
+
+Each watcher publishes its latest 200 runs, with up to 50 example events per run and complete summary counts. More event details remain in the corresponding GitHub Actions logs while those logs are retained. Earlier raw sightings remain in Git history. GitHub Pages can take a few minutes to reflect a completed run.
+
+To import a CSV with the standard availability columns, run `python3 scripts/publish_availability.py path/to/import.csv`. The publisher consumes that input file after a successful merge; retain a separate backup when importing an archive.
+
+The legacy Supabase SQL schemas are retained as migration references. Runtime code no longer reads or writes Supabase, and its GitHub Actions secrets are no longer used. Changing the code does not cancel a Supabase subscription; keep any required full database backup before separately closing the old project.
+
+Regression checks (no live notifications or API calls):
+
+```bash
+python3 -m unittest discover -s tests -p 'test_*.py'
+node --test tests/dashboard-data.test.cjs
+```
 
 This instance of the dashboard requires a password, which is available upon request. If you'd like to guess, it's a 2-word phrase representative of a hallmark service touch at this dining establishment.
 
@@ -107,7 +124,7 @@ This instance of the dashboard requires a password, which is available upon requ
 - **State persistence**: Slot state is stored in a GitHub Gist (JSON) so it survives across workflow runs. Each slot is keyed by `{MERCHANT_ID}|{DATE}|{TIME}|{PARTY}|{SERVICE}`.
 - **Anti-spam logic**: First sighting always notifies. Subsequent sightings respect cooldown, daily cap, and milestone thresholds. High-visibility slots (6–8:30 PM) bypass cooldown.
 - **Rate limiting**: VIP watcher randomizes startup delays (0–30s) and inter-call delays (50–200ms), capped at 120 API calls/hour.
-- **Logging**: All sightings appended to `availability_log.csv` (committed to repo) and optionally to Supabase.
+- **Logging**: A temporary per-run CSV is merged into monthly unique-slot files before publication. Bounded run snapshots are stored as JSON alongside the dashboards.
 
 ---
 

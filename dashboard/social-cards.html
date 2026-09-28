@@ -258,12 +258,14 @@
         <div class="time-pills">
             <button class="time-pill" onclick="setRange('7',this)">7 Days</button>
             <button class="time-pill" onclick="setRange('14',this)">14 Days</button>
-            <button class="time-pill" onclick="setRange('30',this)">30 Days</button>
-            <button class="time-pill active" onclick="setRange('all',this)">All Time</button>
+            <button class="time-pill active" onclick="setRange('30',this)">30 Days</button>
+            <button class="time-pill" onclick="setRange('all',this)">All Time</button>
         </div>
         <span class="controls-hint">↓ below each card downloads 1080×1080 PNG</span>
     </div>
 
+    <p id="dataLoadStatus" role="status" style="padding:0 2rem;text-align:center;color:var(--text-dim)"></p>
+    <p id="emptyRange" hidden style="padding:2rem;text-align:center">No slots for this time range. Choose another range.</p>
     <div class="cards-outer"><div class="cards-row">
 
         <!-- ████  CARD 1 · THE NUMBERS  ████ -->
@@ -481,35 +483,18 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="data.js"></script>
 <script>
-    const SUPABASE_URL = 'https://vegmyektpcavpuotlspp.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_P-G0Ws_M3zsqb3puemcNuQ_DUm-h6we';
-
-    let allData = [], filteredData = [], currentRange = 'all';
+    let allData = [], filteredData = [], currentRange = '30';
     let chartHour = null, chartDay = null;
+
+    const dataLoader = StoneWatchData.createLoader(Papa.parse);
 
     // Chart.js defaults (same as main dashboard)
     Chart.defaults.color = '#a0a0a8';
     Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
     Chart.defaults.font.family = "'Inter', sans-serif";
-
-    async function fetchSupabase() {
-        const pageSize = 1000;
-        let all = [], from = 0;
-        while (true) {
-            const res = await fetch(
-                `${SUPABASE_URL}/rest/v1/unique_slots?select=*&order=seen_at_iso.desc`,
-                { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Range': `${from}-${from + pageSize - 1}`, 'Range-Unit': 'items' } }
-            );
-            if (!res.ok) throw new Error('Supabase fetch failed');
-            const rows = await res.json();
-            all = all.concat(rows);
-            if (rows.length < pageSize) break;
-            from += pageSize;
-        }
-        return all;
-    }
 
     function fmtHour(h) {
         if (h === 0 || h === 24) return '12am';
@@ -533,7 +518,7 @@
         data.forEach(d => { if (d.weekday_slot) dayCounts[d.weekday_slot]=(dayCounts[d.weekday_slot]||0)+1; });
         const bestDay = DAYS.map(d=>({d,c:dayCounts[d]})).sort((a,b)=>b.c-a.c)[0]?.d || 'Mon';
 
-        const uniqueDates = new Set(data.map(d=>(d.slot_at_iso||'').split('T')[0]).filter(Boolean)).size;
+        const uniqueDates = new Set(data.map(d=>new Date(d.slot_at_iso).toLocaleDateString('en-CA', { timeZone: 'America/New_York' })).filter(Boolean)).size;
 
         const lunch  = data.filter(d=>d.service==='Lunch').length;
         const dinner = data.filter(d=>d.service==='Dinner').length;
@@ -574,11 +559,24 @@
         updateCards();
     }
 
-    function setRange(range, el) {
-        currentRange = range;
-        document.querySelectorAll('.time-pill').forEach(p=>p.classList.remove('active'));
-        el.classList.add('active');
-        applyFilters();
+    async function setRange(range, el) {
+        const status = document.getElementById('dataLoadStatus');
+        const pills = document.querySelectorAll('.time-pill');
+        pills.forEach(pill => { pill.disabled = true; });
+        status.textContent = 'Loading history…';
+        try {
+            allData = await dataLoader.load(range);
+            currentRange = range;
+            pills.forEach(pill => pill.classList.remove('active'));
+            el.classList.add('active');
+            applyFilters();
+            status.textContent = '';
+        } catch (error) {
+            console.error(error);
+            status.textContent = 'Could not load that range. Select it again to retry.';
+        } finally {
+            pills.forEach(pill => { pill.disabled = false; });
+        }
     }
 
     // Inject innerHTML with <strong> tags — same pattern as main dashboard
@@ -586,6 +584,8 @@
 
     function updateCards() {
         const s = calcStats(filteredData);
+        document.getElementById('emptyRange').hidden = !!s;
+        document.querySelector('.cards-outer').style.display = s ? '' : 'none';
         if (!s) return;
 
         // ── Card 1: Stats ──
@@ -774,14 +774,7 @@
 
     async function init() {
         try {
-            const raw = await fetchSupabase();
-            const seen = new Set();
-            allData = raw.filter(r => {
-                if (!r.slot_at_iso || !r.service) return false;
-                const k = `${r.slot_at_iso}-${r.party_size}-${r.service}`;
-                if (seen.has(k)) return false;
-                seen.add(k); return true;
-            });
+            allData = await dataLoader.load(currentRange);
             filteredData = [...allData];
             document.getElementById('loadingState').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';

@@ -52,10 +52,6 @@ jobs:
           GIST_ID: ${{ secrets.GIST_ID }}
           GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
 
-          # --- SUPABASE DATABASE ---
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-
           # --- DEBUGGING TEMP ---
           DEBUG: "true"
           TEST_ALERT: "false"
@@ -63,25 +59,32 @@ jobs:
           #TEST_FIXED_KEY: "Thu Oct 09|7:30 PM|2|Dinner"
         run: python watcher.py
 
+      - name: Publish monthly dashboard data
+        id: publish_data
+        if: always()
+        run: python scripts/publish_availability.py
+
       - name: Commit logs (if any)
+        if: always() && steps.publish_data.outcome == 'success' && github.ref == 'refs/heads/main'
         run: |
-          if [ -f availability_log.csv ]; then
+          if [ -f data/availability/index.json ]; then
             git config user.email "actions@github.com"
             git config user.name "GitHub Actions"
 
-            # Pull latest to avoid conflicts (with rebase to keep history clean)
-            git fetch origin main
-            git reset --soft origin/main 2>/dev/null || true
-
             # Stage and commit
-            git add availability_log.csv
+            git add data/availability dashboard/base-runs.json
             git diff --cached --quiet || git commit -m "update logs [skip ci]"
 
             # Push with retry logic for race conditions
             for i in 1 2 3; do
-              git push origin main && break
+              if git push origin HEAD:main; then
+                exit 0
+              fi
+              if [ "$i" -eq 3 ]; then
+                echo "::error::Could not publish availability data after 3 attempts"
+                exit 1
+              fi
               echo "Push failed, retrying after pull..."
               git pull --rebase origin main
             done
           fi
-

@@ -2,6 +2,7 @@
 import os, time, json, requests, random
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
+import run_history
 
 # GitHub Actions metadata (for run tracking)
 GITHUB_RUN_ID  = os.getenv("GITHUB_RUN_ID", "")
@@ -47,9 +48,6 @@ STATE_FILENAME = f"vip_{MERCHANT_ID}.json"
 # VIP Windows config
 VIP_WINDOWS_RAW = os.getenv("VIP_WINDOWS", "").strip()
 
-# Supabase (optional - for run tracking)
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 # ---- Constants ----
 NYC = ZoneInfo(TIMEZONE)
@@ -360,11 +358,9 @@ class RateLimiter:
         self.calls = [t for t in self.calls if now - t < 3600]
         return max(0, self.max_per_hour - len(self.calls))
 
-# ---- Run Tracking (Supabase) ----
+# ---- Run Tracking (GitHub Pages snapshots) ----
 def create_run_record():
-    """Create a watcher_runs row at the start of each VIP run."""
-    if not (SUPABASE_URL and SUPABASE_KEY):
-        return None
+    """Create a local snapshot at the start of each VIP run."""
     github_run_url = f"{GITHUB_SERVER}/{GITHUB_REPO}/actions/runs/{GITHUB_RUN_ID}" if GITHUB_RUN_ID else None
     config_snapshot = {
         "vip_windows": VIP_WINDOWS_RAW,
@@ -377,65 +373,19 @@ def create_run_record():
         "merchant_id": MERCHANT_ID,
         "restaurant_name": RESTAURANT_NAME,
         "status": "running",
-        "config": json.dumps(config_snapshot),
+        "config": config_snapshot,
         "github_run_id": GITHUB_RUN_ID or None,
         "github_run_url": github_run_url,
     }
-    try:
-        resp = requests.post(
-            f"{SUPABASE_URL}/rest/v1/watcher_runs",
-            headers={
-                "apikey": SUPABASE_KEY,
-                "Authorization": f"Bearer {SUPABASE_KEY}",
-                "Content-Type": "application/json",
-                "Prefer": "return=representation"
-            },
-            json=payload,
-            timeout=10
-        )
-        resp.raise_for_status()
-        rows = resp.json()
-        run_id = rows[0]["id"] if rows else None
-        print(f"📋 VIP Run record created: {run_id}")
-        return run_id
-    except Exception as e:
-        print(f"⚠️  Failed to create VIP run record: {e}")
-        return None
+    return run_history.create(payload)
 
 def log_run_event(run_id, slot_key, slot_at_iso, service, party_size, lead_days, action, reason, suppression_type=None):
-    """Log a single slot decision to the run_events table."""
-    if not run_id or not (SUPABASE_URL and SUPABASE_KEY):
-        return
-    payload = {
-        "run_id": run_id,
-        "slot_key": slot_key,
-        "slot_at_iso": slot_at_iso,
-        "service": service,
-        "party_size": party_size,
-        "lead_days": lead_days,
-        "action": action,
-        "reason": reason,
-        "suppression_type": suppression_type,
-    }
-    try:
-        requests.post(
-            f"{SUPABASE_URL}/rest/v1/run_events",
-            headers={
-                "apikey": SUPABASE_KEY,
-                "Authorization": f"Bearer {SUPABASE_KEY}",
-                "Content-Type": "application/json",
-                "Prefer": "return=minimal"
-            },
-            json=payload,
-            timeout=10
-        )
-    except Exception:
-        pass
+    run_history.event(run_id, slot_key=slot_key, slot_at_iso=slot_at_iso,
+                      service=service, party_size=party_size, lead_days=lead_days,
+                      action=action, reason=reason, suppression_type=suppression_type)
 
 def complete_run_record(run_id, status="success", slots_checked=0, slots_found=0, notifications_sent=0, slots_suppressed=0, api_calls_made=0, api_calls_failed=0, error_message=None):
-    """Update the watcher_runs row with final counts."""
-    if not run_id or not (SUPABASE_URL and SUPABASE_KEY):
-        return
+    """Save the run snapshot with final counts."""
     payload = {
         "completed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "status": status,
@@ -448,22 +398,8 @@ def complete_run_record(run_id, status="success", slots_checked=0, slots_found=0
     }
     if error_message:
         payload["error_message"] = error_message
-    try:
-        requests.patch(
-            f"{SUPABASE_URL}/rest/v1/watcher_runs?id=eq.{run_id}",
-            headers={
-                "apikey": SUPABASE_KEY,
-                "Authorization": f"Bearer {SUPABASE_KEY}",
-                "Content-Type": "application/json",
-                "Prefer": "return=minimal"
-            },
-            json=payload,
-            timeout=10
-        )
-    except Exception as e:
-        print(f"⚠️  Failed to complete VIP run record: {e}")
+    run_history.complete(run_id, **payload)
 
-# ---- Main Logic ----
 def run_vip_watcher():
     print("="*60)
     print("🔥💎 VIP WATCHER STARTING 💎🔥")

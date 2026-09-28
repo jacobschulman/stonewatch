@@ -2,6 +2,7 @@
 import os, time, json, requests, csv
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
+import run_history
 
 # ---- Config via ENV ----
 MERCHANT_ID   = os.getenv("MERCHANT_ID", "278278")
@@ -47,9 +48,6 @@ GIST_TOKEN    = os.getenv("GIST_TOKEN")   # required for cross-run dedupe
 STATE_FILENAME = f"seen_{MERCHANT_ID}.json"
 STATE_TTL_DAYS= 5  # keep keys for 5 days, then prune
 
-# Supabase (optional - for persistent database logging)
-SUPABASE_URL = os.getenv("SUPABASE_URL")  # e.g., https://xxxx.supabase.co
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")  # anon/public key
 
 # GitHub Actions metadata (for run tracking)
 GITHUB_RUN_ID  = os.getenv("GITHUB_RUN_ID", "")
@@ -254,7 +252,7 @@ def notify(items: list[dict]):
         print(f"{title} — {text}")
 
 # ---------- Logging setup ----------
-LOG_FILE = "availability_log.csv"  # Fixed name for GitHub Actions commit step
+LOG_FILE = "availability_log.csv"  # Transient per-run buffer, merged into monthly files by the workflow
 CSV_HEADER = [
     "seen_at_iso", "slot_at_iso",
     "lead_minutes", "lead_hours",
@@ -268,33 +266,9 @@ def ensure_csv_header(path: str):
         with open(path, "w", newline="") as f:
             csv.writer(f).writerow(CSV_HEADER)
 
-def log_to_supabase(data: dict):
-    """Insert a row into Supabase availability_logs table."""
-    if not (SUPABASE_URL and SUPABASE_KEY):
-        return False
-    try:
-        resp = requests.post(
-            f"{SUPABASE_URL}/rest/v1/availability_logs",
-            headers={
-                "apikey": SUPABASE_KEY,
-                "Authorization": f"Bearer {SUPABASE_KEY}",
-                "Content-Type": "application/json",
-                "Prefer": "return=minimal"
-            },
-            json=data,
-            timeout=10
-        )
-        resp.raise_for_status()
-        return True
-    except Exception as e:
-        print(f"⚠️  Supabase insert failed: {e}")
-        return False
-
-# ---------- Run tracking (Supabase) ----------
+# ---------- Run tracking (GitHub Pages snapshots) ----------
 def create_run_record(run_type="base"):
-    """Create a watcher_runs row at the start of each run. Returns the run UUID or None."""
-    if not (SUPABASE_URL and SUPABASE_KEY):
-        return None
+    """Create a local run snapshot and return its UUID."""
     github_run_url = f"{GITHUB_SERVER}/{GITHUB_REPO}/actions/runs/{GITHUB_RUN_ID}" if GITHUB_RUN_ID else None
     config_snapshot = {
         "party_sizes": PARTY_SIZES,
@@ -313,65 +287,19 @@ def create_run_record(run_type="base"):
         "merchant_id": MERCHANT_ID,
         "restaurant_name": RESTAURANT_NAME,
         "status": "running",
-        "config": json.dumps(config_snapshot),
+        "config": config_snapshot,
         "github_run_id": GITHUB_RUN_ID or None,
         "github_run_url": github_run_url,
     }
-    try:
-        resp = requests.post(
-            f"{SUPABASE_URL}/rest/v1/watcher_runs",
-            headers={
-                "apikey": SUPABASE_KEY,
-                "Authorization": f"Bearer {SUPABASE_KEY}",
-                "Content-Type": "application/json",
-                "Prefer": "return=representation"
-            },
-            json=payload,
-            timeout=10
-        )
-        resp.raise_for_status()
-        rows = resp.json()
-        run_id = rows[0]["id"] if rows else None
-        print(f"📋 Run record created: {run_id}")
-        return run_id
-    except Exception as e:
-        print(f"⚠️  Failed to create run record: {e}")
-        return None
+    return run_history.create(payload)
 
 def log_run_event(run_id, slot_key, slot_at_iso, service, party_size, lead_days, action, reason, suppression_type=None):
-    """Log a single slot decision to the run_events table."""
-    if not run_id or not (SUPABASE_URL and SUPABASE_KEY):
-        return
-    payload = {
-        "run_id": run_id,
-        "slot_key": slot_key,
-        "slot_at_iso": slot_at_iso,
-        "service": service,
-        "party_size": party_size,
-        "lead_days": lead_days,
-        "action": action,
-        "reason": reason,
-        "suppression_type": suppression_type,
-    }
-    try:
-        requests.post(
-            f"{SUPABASE_URL}/rest/v1/run_events",
-            headers={
-                "apikey": SUPABASE_KEY,
-                "Authorization": f"Bearer {SUPABASE_KEY}",
-                "Content-Type": "application/json",
-                "Prefer": "return=minimal"
-            },
-            json=payload,
-            timeout=10
-        )
-    except Exception:
-        pass  # non-critical, don't break the run
+    run_history.event(run_id, slot_key=slot_key, slot_at_iso=slot_at_iso,
+                      service=service, party_size=party_size, lead_days=lead_days,
+                      action=action, reason=reason, suppression_type=suppression_type)
 
 def complete_run_record(run_id, status="success", slots_checked=0, slots_found=0, notifications_sent=0, slots_suppressed=0, error_message=None):
-    """Update the watcher_runs row with final counts."""
-    if not run_id or not (SUPABASE_URL and SUPABASE_KEY):
-        return
+    """Save the run snapshot with final counts."""
     payload = {
         "completed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "status": status,
@@ -382,26 +310,13 @@ def complete_run_record(run_id, status="success", slots_checked=0, slots_found=0
     }
     if error_message:
         payload["error_message"] = error_message
-    try:
-        requests.patch(
-            f"{SUPABASE_URL}/rest/v1/watcher_runs?id=eq.{run_id}",
-            headers={
-                "apikey": SUPABASE_KEY,
-                "Authorization": f"Bearer {SUPABASE_KEY}",
-                "Content-Type": "application/json",
-                "Prefer": "return=minimal"
-            },
-            json=payload,
-            timeout=10
-        )
-    except Exception as e:
-        print(f"⚠️  Failed to complete run record: {e}")
+    run_history.complete(run_id, **payload)
 
 def log_slot_event(slot_dt_nyc, seen_dt_utc, service, party_size, merchant_id="278278", source="wisely"):
     lead = (slot_dt_nyc.astimezone(timezone.utc) - seen_dt_utc).total_seconds() / 60.0
     lead_hours = round(lead / 60.0, 1)
 
-    # Data for both CSV and Supabase
+    # Availability metrics for the dashboard CSV
     data = {
         "seen_at_iso": seen_dt_utc.isoformat(timespec="seconds"),
         "slot_at_iso": slot_dt_nyc.isoformat(timespec="seconds"),
@@ -416,10 +331,7 @@ def log_slot_event(slot_dt_nyc, seen_dt_utc, service, party_size, merchant_id="2
         "source": source
     }
 
-    # Write to Supabase (primary)
-    log_to_supabase(data)
-
-    # Write to CSV (backup)
+    # Record availability for the GitHub Pages dashboard
     ensure_csv_header(LOG_FILE)
     row = [data[k] for k in CSV_HEADER]
     with open(LOG_FILE, "a", newline="") as f:

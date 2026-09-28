@@ -804,29 +804,12 @@
     </div>
 
     <script>
-        // ─── Supabase Config ─────────────────────────────────
-        const SUPABASE_URL = 'https://vegmyektpcavpuotlspp.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_P-G0Ws_M3zsqb3puemcNuQ_DUm-h6we';
-
-        const supaHeaders = {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-        };
-
         // ─── Password ───────────────────────────────────────
         const CORRECT_PASSWORD = 'martiniswap';
         const passwordScreen = document.getElementById('passwordScreen');
         const passwordInput = document.getElementById('passwordInput');
         const passwordError = document.getElementById('passwordError');
         const mainContent = document.getElementById('mainContent');
-
-        if (sessionStorage.getItem('sw_auth') === 'true') {
-            passwordScreen.classList.add('hidden');
-            mainContent.classList.add('visible');
-            initApp();
-        } else {
-            passwordInput.focus();
-        }
 
         passwordInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -852,24 +835,18 @@
 
         // ─── Data Fetching ───────────────────────────────────
         async function fetchRuns() {
-            const res = await fetch(
-                `${SUPABASE_URL}/rest/v1/watcher_runs?select=*&order=started_at.desc&limit=200`,
-                { headers: { ...supaHeaders, 'Range': '0-199' } }
-            );
-            if (!res.ok) throw new Error('Failed to fetch runs');
-            return res.json();
+            const snapshots = await Promise.all(['base', 'vip'].map(async type => {
+                const response = await fetch(`${type}-runs.json`, { cache: 'no-cache', signal: AbortSignal.timeout(20000) });
+                if (!response.ok) throw new Error('Run history is unavailable. Please try again.');
+                return response.json();
+            }));
+            const runs = snapshots.flatMap(snapshot => snapshot.runs);
+            allEvents = Object.fromEntries(runs.map(run => [run.id, run.events || []]));
+            return runs.sort((a, b) => Date.parse(b.started_at) - Date.parse(a.started_at)).slice(0, 200);
         }
 
         async function fetchEventsForRun(runId) {
-            if (allEvents[runId]) return allEvents[runId];
-            const res = await fetch(
-                `${SUPABASE_URL}/rest/v1/run_events?run_id=eq.${runId}&order=created_at.asc&limit=500`,
-                { headers: supaHeaders }
-            );
-            if (!res.ok) return [];
-            const events = await res.json();
-            allEvents[runId] = events;
-            return events;
+            return allEvents[runId] || [];
         }
 
         // ─── Helpers ─────────────────────────────────────────
@@ -1079,7 +1056,7 @@
                 <div class="empty-state">
                     <div class="empty-state-icon">&#x1f4e1;</div>
                     <div class="empty-state-text">No runs recorded yet</div>
-                    <div class="empty-state-hint">Run data will appear here once the watcher starts logging to Supabase.<br>Make sure supabase_schema_runs.sql has been applied.</div>
+                    <div class="empty-state-hint">Run data will appear here after the next watcher run publishes its history to GitHub Pages.</div>
                 </div>
             `;
         }
@@ -1168,7 +1145,7 @@
                             <span class="event-reason">${e.reason || ''}</span>
                         </div>`;
                     }).join('')}
-                    ${sorted.length > 50 ? `<div class="no-events">+ ${sorted.length - 50} more events</div>` : ''}
+                    ${run.total_events > sorted.length ? `<div class="no-events">Showing ${sorted.length} of ${run.total_events} events. Full details are in GitHub Actions.</div>` : ''}
                 </div>`;
             }
 
@@ -1218,7 +1195,6 @@
                 setInterval(async () => {
                     try {
                         allRuns = await fetchRuns();
-                        allEvents = {};  // clear cache
                         render();
                     } catch (e) {
                         console.warn('Auto-refresh failed:', e);
@@ -1232,12 +1208,20 @@
                         <div>Unable to load run data</div>
                         <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-dim);">${error.message}</div>
                         <div style="font-size: 0.75rem; margin-top: 1rem; color: var(--text-dim);">
-                            Make sure <code>supabase_schema_runs.sql</code> has been applied to your Supabase project.
+                            Run history is published after each watcher finishes. Check GitHub Actions if this persists.
                         </div>
                     </div>
                 `;
             }
         }
+        if (sessionStorage.getItem('sw_auth') === 'true') {
+            passwordScreen.classList.add('hidden');
+            mainContent.classList.add('visible');
+            initApp();
+        } else {
+            passwordInput.focus();
+        }
+
     </script>
 </body>
 </html>

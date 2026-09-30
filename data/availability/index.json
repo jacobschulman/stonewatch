@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updated_at": "2026-09-30T08:27:20.113887+00:00",
-  "total_slots": 11226,
+  "updated_at": "2026-09-30T15:10:05.190599+00:00",
+  "total_slots": 11239,
   "months": [
     {
       "month": "2025-10",
@@ -96,20 +96,20 @@
     {
       "month": "2026-09",
       "file": "2026-09.csv",
-      "rows": 924,
-      "bytes": 87963,
-      "sha256": "5a731de47f856e9a3218f6bb090b60edeee43536c68bc7fba3d336db828c98cc",
+      "rows": 925,
+      "bytes": 88057,
+      "sha256": "a300bf95ad84739a52bd674e78bceb99989bc517bfe5cfba36653b32b00ccdfe",
       "first_seen": "2026-08-29T07:24:11+00:00",
-      "last_seen": "2026-09-30T08:25:30+00:00"
+      "last_seen": "2026-09-30T15:08:34+00:00"
     },
     {
       "month": "2026-10",
       "file": "2026-10.csv",
-      "rows": 16,
-      "bytes": 1642,
-      "sha256": "3471fd183869bc123800a6902f2a2273b5e2b45e0b38bc3b62c200d301bed342",
+      "rows": 28,
+      "bytes": 2790,
+      "sha256": "cd267f0bd39d8581ce5251fd135d6afaa00c6d5c75a20dd81de142c016b456e8",
       "first_seen": "2026-09-29T07:02:10+00:00",
-      "last_seen": "2026-09-30T08:25:59+00:00"
+      "last_seen": "2026-09-30T15:08:54+00:00"
     }
   ]
 }

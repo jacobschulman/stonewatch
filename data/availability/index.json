@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updated_at": "2026-10-18T06:26:54.008107+00:00",
-  "total_slots": 11554,
+  "updated_at": "2026-10-18T17:36:51.896571+00:00",
+  "total_slots": 11558,
   "months": [
     {
       "month": "2025-10",
@@ -105,11 +105,11 @@
     {
       "month": "2026-10",
       "file": "2026-10.csv",
-      "rows": 343,
-      "bytes": 32692,
-      "sha256": "6af09228cbdc3b24dd3825ab1bac21c94bed9d2a152fb180b0e434617d4bfce3",
+      "rows": 347,
+      "bytes": 33068,
+      "sha256": "e17ffa43d1ccbd34fd956b0668e9b586cbc1bab23c1f2aad3d98d543b7054eed",
       "first_seen": "2026-09-29T07:02:10+00:00",
-      "last_seen": "2026-10-18T06:25:47+00:00"
+      "last_seen": "2026-10-18T17:35:35+00:00"
     }
   ]
 }

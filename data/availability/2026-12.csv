@@ -1,0 +1,4 @@
+seen_at_iso,slot_at_iso,lead_minutes,lead_hours,service,party_size,weekday_slot,weekday_seen,hour_slot,merchant_id,source
+2026-11-28T13:36:08+00:00,2026-12-01T14:00:00-05:00,4644,77.4,Dinner,2,Tue,Sat,14,278278,wisely
+2026-11-28T13:36:08+00:00,2026-12-01T16:45:00-05:00,4809,80.1,Dinner,2,Tue,Sat,16,278278,wisely
+2026-11-28T13:36:08+00:00,2026-12-01T16:45:00-05:00,4809,80.1,Dinner,4,Tue,Sat,16,278278,wisely
